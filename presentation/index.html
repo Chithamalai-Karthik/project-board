@@ -1,0 +1,1196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project board</title>
+<!--
+  The project board, presented: a few slides and a guided tour of a made-up project ("Website relaunch").
+  Everything is in this page and its fonts/ folder: it works offline, opened straight from the disk.
+  The tour's chat is scripted and its dates were worked out with the plugin's own roadmap.py.
+  Keys: → / Space / PageDown next · ← / PageUp back · M board or ROADMAP.md (in the tour) · R restart the tour
+        T light or dark · F full screen · H the handout
+-->
+<style>
+    @font-face { font-family: "Josefin Sans"; src: url(fonts/JosefinSans.woff2) format("woff2"); font-weight: 100 700; }
+    @font-face { font-family: "Quicksand"; src: url(fonts/Quicksand.woff2) format("woff2"); font-weight: 300 700; }
+
+    /* The board's own colours (board/index.html) */
+    :root {
+        --bg: #f3f1ec;
+        --surface: #ffffff;
+        --surface-2: #faf8f4;
+        --ink: #1d2230;
+        --muted: #646b78;
+        --line: #e2ded5;
+        --accent: #b8742e;
+        --todo: #7b8494;
+        --next: #2a78d6;
+        --doing: #c98500;
+        --done: #1a8f5f;
+        --hold: #c4473c;
+        --late: #c4473c;
+        --soon: #b07400;
+        --p0: #a0672b; --p1: #2a78d6; --p2: #eb6834;
+        --shadow: 0 1px 2px rgba(20, 24, 34, 0.06), 0 4px 14px rgba(20, 24, 34, 0.05);
+        --you: #1d2230;
+        --you-ink: #f3f1ec;
+        color-scheme: light;
+    }
+    @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+            --bg: #10141d; --surface: #1a2030; --surface-2: #151a27; --ink: #eef0f4; --muted: #a3aab8; --line: #2a3142;
+            --accent: #e0a35e; --todo: #8d96a6; --next: #3987e5; --doing: #d99a1a; --done: #2aa572; --hold: #e66767;
+            --late: #ef7a7a; --soon: #e2a93a; --p0: #c98a4a; --p1: #3987e5; --p2: #d95926;
+            --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px rgba(0, 0, 0, 0.25);
+            --you: #eef0f4; --you-ink: #10141d;
+            color-scheme: dark;
+        }
+    }
+    :root[data-theme="dark"] {
+        --bg: #10141d; --surface: #1a2030; --surface-2: #151a27; --ink: #eef0f4; --muted: #a3aab8; --line: #2a3142;
+        --accent: #e0a35e; --todo: #8d96a6; --next: #3987e5; --doing: #d99a1a; --done: #2aa572; --hold: #e66767;
+        --late: #ef7a7a; --soon: #e2a93a; --p0: #c98a4a; --p1: #3987e5; --p2: #d95926;
+        --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px rgba(0, 0, 0, 0.25);
+        --you: #eef0f4; --you-ink: #10141d;
+        color-scheme: dark;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+        background: var(--bg); color: var(--ink); overflow: hidden;
+        font: 15px/1.5 Quicksand, system-ui, sans-serif;
+    }
+    b, strong { font-weight: 600; }
+    code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+
+    /* A 1600 × 900 stage, scaled to fit the screen */
+    #stage {
+        position: absolute; left: 50%; top: 50%; width: 1600px; height: 900px;
+        transform: translate(-50%, -50%) scale(var(--k, 1));
+    }
+    .slide {
+        position: absolute; inset: 0; padding: 72px 96px 90px; display: flex; flex-direction: column;
+        opacity: 0; visibility: hidden; transition: opacity .45s ease, visibility 0s linear .45s;
+    }
+    .slide:not(.tour) { justify-content: center; padding-bottom: 110px; }
+    .slide.on { opacity: 1; visibility: visible; transition: opacity .45s ease; }
+    @media (prefers-reduced-motion: reduce) { .slide, .slide.on { transition: none; } }
+
+    .kicker { font: 600 18px "Josefin Sans", sans-serif; letter-spacing: 5px; text-transform: uppercase; color: var(--accent); margin: 0 0 18px; }
+    h1, h2 { margin: 0; font-family: "Josefin Sans", sans-serif; font-weight: 600; text-transform: uppercase; }
+    h1 { font-size: 96px; line-height: 1; letter-spacing: 12px; }
+    h2 { font-size: 50px; line-height: 1.1; letter-spacing: 6px; margin-bottom: 44px; }
+    .lead { font-size: 34px; line-height: 1.35; font-weight: 500; margin: 0; max-width: 1100px; }
+    .muted { color: var(--muted); }
+    .box {
+        background: var(--surface); border: 1px solid var(--line); border-radius: 22px; box-shadow: var(--shadow);
+    }
+
+    /* 1 · Title */
+    .title-slide { justify-content: center; }
+    .title-slide .lead { margin-top: 34px; }
+    .title-slide .by { margin-top: 56px; font-size: 22px; color: var(--muted); }
+    .mini {
+        position: absolute; right: 96px; top: 50%; transform: translateY(-50%) rotate(-3deg); width: 520px; padding: 20px;
+        display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+    }
+    .mini .mc { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 8px; min-height: 260px; }
+    .mini .mh { display: block; width: 12px; height: 12px; border-radius: 50%; background: var(--c); margin: 0 0 12px 2px; }
+    .mini .mk { height: 38px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--phase); margin-bottom: 8px; }
+
+    /* 2 · The problem */
+    .three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+    .three .box { padding: 36px 34px; }
+    .big-icon { font-size: 46px; line-height: 1; margin-bottom: 22px; }
+    .three p { margin: 0; font-size: 27px; line-height: 1.4; font-weight: 500; }
+    .three p small { display: block; margin-top: 14px; font-size: 21px; color: var(--muted); font-weight: 400; }
+
+    /* 3 · The idea: a flow */
+    .flow { display: flex; align-items: stretch; gap: 0; }
+    .flow .box { flex: 1; padding: 30px 26px; display: flex; flex-direction: column; gap: 12px; }
+    .flow .arrow { flex: none; width: 64px; display: flex; align-items: center; justify-content: center; font-size: 40px; color: var(--accent); }
+    .flow h3 { margin: 0; font: 600 20px "Josefin Sans", sans-serif; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); }
+    .flow p { margin: 0; font-size: 23px; line-height: 1.4; }
+    .bubble { align-self: flex-start; padding: 12px 18px; border-radius: 18px 18px 18px 6px; background: var(--you); color: var(--you-ink); font-size: 22px; }
+    .file { font-size: 15px; line-height: 1.55; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; white-space: pre; overflow: hidden; }
+    .file .hl { background: color-mix(in srgb, var(--done) 18%, transparent); border-radius: 4px; }
+    .idea-note { margin-top: 48px; font-size: 30px; font-weight: 500; }
+
+    /* 4 · Who gets what */
+    .roles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; }
+    .roles .box { padding: 28px 24px; border-top: 5px solid var(--c); }
+    .roles h3 { margin: 0 0 14px; font: 600 21px "Josefin Sans", sans-serif; letter-spacing: 3px; text-transform: uppercase; }
+    .roles p { margin: 0; font-size: 21px; line-height: 1.45; }
+    .roles .see { margin-top: 18px; font-size: 17px; color: var(--muted); }
+
+    /* 5 · How it works */
+    .steps4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; counter-reset: s; }
+    .steps4 .box { padding: 30px 28px; }
+    .steps4 .n { width: 52px; height: 52px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; font: 600 24px "Josefin Sans", sans-serif; margin-bottom: 20px; }
+    .steps4 h3 { margin: 0 0 10px; font: 600 26px "Josefin Sans", sans-serif; letter-spacing: 3px; text-transform: uppercase; }
+    .steps4 p { margin: 0; font-size: 21px; line-height: 1.45; }
+    .cols5 { margin-top: 34px; display: flex; gap: 12px; flex-wrap: wrap; font-size: 20px; align-items: center; }
+    .cols5 .pill { display: inline-flex; align-items: center; gap: 10px; padding: 8px 18px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); }
+    .cols5 .pill i { width: 12px; height: 12px; border-radius: 50%; background: var(--c); }
+
+    /* 7 · Simple by design */
+    .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+    .facts .box { padding: 28px 30px; }
+    .facts h3 { margin: 0 0 8px; font-size: 26px; font-weight: 600; }
+    .facts p { margin: 0; font-size: 20px; color: var(--muted); line-height: 1.45; }
+
+    /* 8 · Get started */
+    .start { display: grid; grid-template-columns: 1.15fr 1fr; gap: 28px; }
+    .start .box { padding: 32px 34px; }
+    .start h3 { margin: 0 0 18px; font: 600 21px "Josefin Sans", sans-serif; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); }
+    .cmd { font-size: 21px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; margin: 0 0 12px; white-space: pre; }
+    .start p { margin: 0 0 14px; font-size: 22px; line-height: 1.45; }
+    .say { display: flex; flex-direction: column; gap: 12px; }
+    .say .bubble { font-size: 21px; }
+    .repo { margin-top: 30px; font-size: 24px; }
+    .repo a { color: var(--accent); text-decoration: none; font-weight: 600; }
+
+    /* 9 · Questions */
+    .end-slide { justify-content: center; align-items: center; text-align: center; }
+    .end-slide h1 { font-size: 110px; }
+    .end-slide .lead { margin-top: 30px; }
+
+    /* 6 · The tour */
+    .tour { padding: 26px 32px 70px; }
+    .tour-top { display: flex; align-items: center; gap: 18px; height: 52px; margin-bottom: 16px; }
+    .tour-top .kicker { margin: 0; }
+    .tour-top .name { font: 600 26px "Josefin Sans", sans-serif; letter-spacing: 4px; text-transform: uppercase; }
+    .tour-top .grow { flex: 1; }
+    .today-pill { display: inline-flex; align-items: center; gap: 10px; padding: 8px 18px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-size: 19px; font-weight: 600; }
+    .today-pill span { color: var(--muted); font-weight: 500; }
+    .today-pill.tick { animation: tick .9s ease; }
+    @keyframes tick { 0%, 40% { border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent); } }
+    .tour-count { font-size: 17px; color: var(--muted); min-width: 64px; text-align: right; }
+    .tour-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 410px 1fr; gap: 20px; }
+
+    .side { display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+    .caption {
+        padding: 16px 20px; border-radius: 18px; background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+        border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); font-size: 18px; line-height: 1.45; min-height: 104px;
+    }
+    .caption b { color: var(--accent); }
+    .chat { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+    .chat-head { display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-bottom: 1px solid var(--line); font-size: 15px; color: var(--muted); }
+    .chat-head .av { width: 26px; height: 26px; border-radius: 8px; background: var(--accent); color: #fff; display: grid; place-items: center; font: 600 15px "Josefin Sans", sans-serif; }
+    .log { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 16px 6px; display: flex; flex-direction: column; gap: 10px; scrollbar-width: none; }
+    .log::-webkit-scrollbar { display: none; }
+    .msg { max-width: 92%; font-size: 15.5px; line-height: 1.45; animation: pop .25s ease-out; white-space: pre-line; }
+    @keyframes pop { from { opacity: 0; transform: translateY(6px); } }
+    .msg.you { align-self: flex-end; background: var(--you); color: var(--you-ink); padding: 9px 14px; border-radius: 16px 16px 6px 16px; }
+    .msg.agent { align-self: flex-start; background: var(--surface-2); border: 1px solid var(--line); padding: 9px 14px; border-radius: 16px 16px 16px 6px; }
+    .msg.tool { align-self: stretch; max-width: none; font-size: 13px; color: var(--muted); display: flex; gap: 8px; align-items: baseline; padding: 0 4px; white-space: normal; }
+    .msg.tool i { font-style: normal; color: var(--done); }
+    .msg.tool.busy i { color: var(--doing); animation: blink .6s infinite alternate; }
+    @keyframes blink { to { opacity: .2; } }
+    .msg.time { align-self: center; font-size: 13px; color: var(--muted); padding: 2px 12px; border: 1px dashed var(--line); border-radius: 999px; }
+    .msg.ask { align-self: stretch; max-width: none; background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; white-space: normal; }
+    .msg.ask .q { font-size: 13.5px; color: var(--muted); margin-top: 8px; }
+    .msg.ask .q:first-child { margin-top: 0; }
+    .msg.ask .a { display: inline-block; margin-top: 4px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--accent); color: var(--ink); background: color-mix(in srgb, var(--accent) 10%, transparent); font-size: 14px; animation: pop .25s ease-out; }
+    .log .old { opacity: .55; }
+    .composer { margin: 8px 12px 12px; padding: 10px 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface-2); font-size: 15px; min-height: 44px; color: var(--muted); }
+    .composer.typing { color: var(--ink); border-color: var(--accent); }
+    .composer.typing::after { content: "▍"; color: var(--accent); animation: blink .5s infinite alternate; }
+
+    /* The board window */
+    .win { display: flex; flex-direction: column; min-height: 0; overflow: hidden; padding: 0; }
+    .win-bar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
+    .win-bar .dots { display: flex; gap: 6px; margin-right: 6px; }
+    .win-bar .dots i { width: 11px; height: 11px; border-radius: 50%; background: var(--line); }
+    .tab { font: 600 14px Quicksand, sans-serif; color: var(--muted); background: none; border: 1px solid transparent; border-radius: 10px; padding: 5px 14px; cursor: pointer; }
+    .tab[aria-selected="true"] { color: var(--ink); background: var(--surface); border-color: var(--line); }
+    .win-bar .url { margin-left: auto; font-size: 13px; color: var(--muted); }
+    .pane { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+    .view { position: absolute; inset: 0; padding: 14px 16px 12px; display: flex; flex-direction: column; transition: opacity .35s ease; }
+    .view[hidden] { display: flex; opacity: 0; pointer-events: none; }
+
+    .empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: var(--muted); font-size: 18px; }
+    .empty-state b { display: block; font: 600 22px "Josefin Sans", sans-serif; letter-spacing: 3px; text-transform: uppercase; color: var(--ink); margin-bottom: 8px; }
+    .empty-state .tree { margin-top: 22px; text-align: left; font-size: 15px; line-height: 1.6; padding: 14px 20px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); color: var(--ink); }
+    .empty-state .tree .new { color: var(--done); font-weight: 600; }
+
+    /* The board, compact (same parts and colours as board/index.html) */
+    .bd { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+    .bd-head { display: flex; align-items: baseline; gap: 14px; }
+    .bd-head h4 { margin: 0; font: 600 19px/1.1 "Josefin Sans", sans-serif; letter-spacing: 4px; text-transform: uppercase; }
+    .bd-head .sub { font-size: 13px; color: var(--muted); }
+    .bd-top { display: grid; grid-template-columns: 1.25fr 1fr 1fr 1fr; gap: 10px; }
+    .timeline, .phase { background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); border-radius: 14px; font-size: 12px; }
+    .timeline { padding: 9px 12px; }
+    .tl-head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+    .tl-head b { font: 600 12px "Josefin Sans", sans-serif; letter-spacing: 2px; text-transform: uppercase; }
+    .tl-state { font-weight: 600; }
+    .tl-state.late { color: var(--late); }
+    .tl-state.ok { color: var(--done); }
+    .tl-dates { color: var(--muted); }
+    .tl-track { position: relative; height: 20px; margin: 6px 0 2px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+    .tl-phase {
+        position: absolute; top: 2px; bottom: 2px; border-radius: 5px; background: color-mix(in srgb, var(--phase) 26%, transparent);
+        border: 1px solid color-mix(in srgb, var(--phase) 60%, transparent); font-size: 10px; font-weight: 600; padding: 0 5px; line-height: 14px;
+        transition: left .8s ease, width .8s ease;
+    }
+    .tl-today { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--ink); transition: left .8s ease; }
+    .tl-scale { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; }
+    .tl-work { display: flex; align-items: center; gap: 6px; margin-top: 3px; color: var(--muted); font-size: 11px; }
+    .tl-work .meter { flex: 1; height: 5px; border-radius: 3px; background: var(--line); overflow: hidden; }
+    .tl-work .meter i { display: block; height: 100%; background: var(--done); border-radius: 3px; transition: width .8s ease; }
+    .phase { border-top: 4px solid var(--phase); padding: 9px 12px; }
+    .phase .top { display: flex; justify-content: space-between; gap: 6px; font-size: 13px; }
+    .phase .count { color: var(--muted); white-space: nowrap; }
+    .phase .dates { color: var(--muted); font-size: 11.5px; margin-top: 1px; }
+    .bar { display: flex; gap: 2px; height: 7px; margin-top: 8px; }
+    .bar i { flex: 1; border-radius: 4px; background: var(--line); transition: background .5s ease; }
+    .bar i.done { background: var(--done); } .bar i.doing { background: var(--doing); }
+    .bar i.next { background: var(--next); } .bar i.hold { background: var(--hold); }
+
+    .board { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+    .col { background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 9px 8px 4px; display: flex; flex-direction: column; min-height: 0; }
+    .col h5 { margin: 1px 3px 9px; font: 600 12px "Josefin Sans", sans-serif; letter-spacing: 2px; text-transform: uppercase; display: flex; align-items: center; gap: 7px; }
+    .col h5 .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
+    .col h5 .n { margin-left: auto; color: var(--muted); font-weight: 400; letter-spacing: 0; }
+    .cards { flex: 1; min-height: 0; overflow: hidden; }
+    .nothing { color: var(--muted); font-size: 12px; padding: 2px 5px; }
+    .s-todo { --c: var(--todo); } .s-next { --c: var(--next); } .s-doing { --c: var(--doing); }
+    .s-done { --c: var(--done); } .s-hold { --c: var(--hold); }
+
+    .card {
+        background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--phase);
+        border-radius: 11px; padding: 7px 9px; margin-bottom: 6px; box-shadow: var(--shadow);
+    }
+    .card h6 { margin: 0 0 4px; font-size: 13.5px; font-weight: 600; line-height: 1.3; }
+    .card .meta { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; font-size: 11px; color: var(--muted); }
+    .chip { border: 1px solid var(--line); border-radius: 999px; padding: 0 6px; }
+    .chip.phase { color: var(--phase); border-color: var(--phase); font-weight: 600; }
+    .due { font-weight: 600; border-radius: 999px; padding: 0 6px; border: 1px solid var(--line); }
+    .due.late { color: var(--late); border-color: var(--late); background: color-mix(in srgb, var(--late) 10%, transparent); }
+    .due.soon { color: var(--soon); border-color: var(--soon); }
+    .due.done { color: var(--done); border-color: color-mix(in srgb, var(--done) 50%, transparent); }
+    .card .status { font-size: 11.5px; color: var(--muted); margin: 4px 0 0; }
+    .card .note { margin-top: 5px; padding: 5px 8px; border-radius: 8px; font-size: 11.5px; background: color-mix(in srgb, var(--hold) 12%, transparent); }
+    .parts { list-style: none; margin: 5px 0 0; padding: 0; }
+    .parts li { display: flex; gap: 6px; align-items: baseline; font-size: 11.5px; padding: 2px 0; border-top: 1px dashed var(--line); }
+    .parts li:first-child { border-top: 0; }
+    .parts .pdot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--c); align-self: center; }
+    .parts .pid { font-weight: 600; }
+    .parts .ptxt { color: var(--muted); }
+    .parts .late { color: var(--late); font-weight: 600; }
+    .s-done .card { display: flex; align-items: center; gap: 6px; padding: 6px 9px; }
+    .s-done .card h6 { flex: 1; margin: 0; font-size: 13px; line-height: 1.25; }
+    .s-done .card .meta > :not(.due) { display: none; }
+    .more { color: var(--muted); font-size: 12px; padding: 2px 5px; }
+    .card.arrived { animation: arrived 2.4s ease-out; }
+    @keyframes arrived {
+        0%, 35% { box-shadow: 0 0 0 3px var(--accent), var(--shadow); }
+        100% { box-shadow: 0 0 0 3px transparent, var(--shadow); }
+    }
+    .card.deal { animation: deal .5s ease-out backwards; }
+    @keyframes deal { from { opacity: 0; transform: translateY(14px); } }
+    .ghost { position: absolute; z-index: 20; margin: 0; pointer-events: none; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.3); }
+    .toast {
+        position: absolute; right: 18px; bottom: 16px; z-index: 30; display: flex; flex-direction: column; gap: 1px;
+        padding: 10px 16px; border-radius: 12px; background: var(--ink); color: var(--bg); font-size: 13px; box-shadow: var(--shadow);
+        opacity: 0; transform: translateY(10px); transition: opacity .3s ease, transform .3s ease; pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: none; }
+    .toast b { font-size: 14px; }
+
+    /* ROADMAP.md */
+    .md { flex: 1; min-height: 0; overflow: hidden; font-size: 13.5px; line-height: 1.6; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 0; }
+    .md div { padding: 0 16px; white-space: pre; overflow: hidden; text-overflow: ellipsis; min-height: 1.6em; }
+    .md .h { font-weight: 700; color: var(--accent); }
+    .md .changed { background: color-mix(in srgb, var(--done) 16%, transparent); box-shadow: inset 3px 0 0 var(--done); }
+
+    /* Presenter bar */
+    #bar {
+        position: fixed; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; gap: 10px;
+        padding: 10px 16px; z-index: 100; opacity: 0.35; transition: opacity .3s ease;
+    }
+    #bar:hover, body.moving #bar { opacity: 1; }
+    #bar button, #bar a {
+        font: 500 13px Quicksand, sans-serif; color: var(--ink); background: var(--surface); border: 1px solid var(--line);
+        border-radius: 999px; padding: 6px 14px; cursor: pointer; text-decoration: none; min-height: 34px; display: inline-flex; align-items: center;
+    }
+    #bar button:hover, #bar a:hover { border-color: var(--accent); }
+    #bar [hidden] { display: none; }
+    #dots { display: flex; gap: 6px; margin: 0 8px; }
+    #dots button { width: 12px; height: 12px; min-height: 0; padding: 0; border-radius: 50%; background: var(--line); border: 0; }
+    #dots button[aria-current="true"] { background: var(--accent); }
+    @media print { #bar { display: none; } }
+</style>
+</head>
+<body>
+<div id="stage">
+
+    <!-- 1 · Title -->
+    <section class="slide title-slide" aria-label="Title">
+        <p class="kicker">A plugin for Claude Code</p>
+        <h1>Project<br>board</h1>
+        <p class="lead">Plan with your agent.<br>Follow the work on a live board.</p>
+        <p class="by">Chithamalai Karthik</p>
+        <div class="mini box" aria-hidden="true" id="mini"></div>
+    </section>
+
+    <!-- 2 · The problem -->
+    <section class="slide" aria-label="The problem">
+        <p class="kicker">The problem</p>
+        <h2>Plans go stale</h2>
+        <div class="three">
+            <div class="box"><div class="big-icon">📄</div><p>The plan lives in a document nobody updates.<small>It's right on day one, and out of date by week two.</small></p></div>
+            <div class="box"><div class="big-icon">✋</div><p>The board is moved by hand, when someone remembers.<small>So it shows what people last had time to update.</small></p></div>
+            <div class="box"><div class="big-icon">📅</div><p>Dates are guesses, and slips show up late.<small>By the time a delay is visible, the launch has moved.</small></p></div>
+        </div>
+    </section>
+
+    <!-- 3 · The idea -->
+    <section class="slide" aria-label="The idea">
+        <p class="kicker">The idea</p>
+        <h2>One file, kept current by the agent</h2>
+        <div class="flow">
+            <div class="box">
+                <h3>You say</h3>
+                <div class="bubble">The page designs are done.</div>
+                <p class="muted">Or the agent notices, while it does the work.</p>
+            </div>
+            <div class="arrow">→</div>
+            <div class="box">
+                <h3>The agent updates</h3>
+                <div class="file mono">| 3 | Visual design | <span class="hl">Done 2026-11-11</span> |</div>
+                <p class="muted">One line in ROADMAP.md, in the project.</p>
+            </div>
+            <div class="arrow">→</div>
+            <div class="box">
+                <h3>The board shows it</h3>
+                <p>The card flies to <b style="color: var(--done)">Done</b>, and progress and dates move with it.</p>
+            </div>
+        </div>
+        <p class="idea-note">The roadmap is the only source. <span class="muted">The board is just a view of it: nobody moves cards by hand.</span></p>
+    </section>
+
+    <!-- 4 · Who gets what -->
+    <section class="slide" aria-label="What each of us gets">
+        <p class="kicker">For the whole team</p>
+        <h2>What each of us gets</h2>
+        <div class="roles">
+            <div class="box" style="--c: var(--p1)"><h3>Developers</h3><p>The agent updates the plan while it codes. No extra tool, no tickets to move.</p><p class="see">Plan, statuses and dates in the repo.</p></div>
+            <div class="box" style="--c: var(--p0)"><h3>Managers</h3><p>Progress, dates and anything overdue at a glance: on track or not, in one line.</p><p class="see">The schedule timeline.</p></div>
+            <div class="box" style="--c: var(--p2)"><h3>Marketing</h3><p>When launch is, what's next and what's waiting, without having to ask.</p><p class="see">Phase dates and the Next column.</p></div>
+            <div class="box" style="--c: var(--done)"><h3>Designers</h3><p>Design steps and reviews are on the board too, with what they're waiting for.</p><p class="see">"Waiting for the design review".</p></div>
+            <div class="box" style="--c: var(--hold)"><h3>Facilitators</h3><p>A ready board for stand-ups, and a new schedule in one sentence when things slip.</p><p class="see">Overdue flags and rescheduling.</p></div>
+        </div>
+    </section>
+
+    <!-- 5 · How it works -->
+    <section class="slide" aria-label="How it works">
+        <p class="kicker">How it works</p>
+        <h2>Plan, schedule, work, watch</h2>
+        <div class="steps4">
+            <div class="box"><div class="n">1</div><h3>Plan</h3><p>The agent asks a few questions, then writes phases and steps a person can check.</p></div>
+            <div class="box"><div class="n">2</div><h3>Schedule</h3><p>A script counts working days, days off and effort sizes. Every due date is worked out, none guessed.</p></div>
+            <div class="box"><div class="n">3</div><h3>Work</h3><p>As work happens, steps become in progress, done, waiting or on hold, with the date.</p></div>
+            <div class="box"><div class="n">4</div><h3>Watch</h3><p>The board shows it: columns, a timeline, overdue flags. Cards fly when they move.</p></div>
+        </div>
+        <div class="cols5">
+            <span class="muted">The board's columns:</span>
+            <span class="pill s-todo"><i></i>To do</span>
+            <span class="pill s-next"><i></i>Next</span>
+            <span class="pill s-doing"><i></i>In progress</span>
+            <span class="pill s-done"><i></i>Done</span>
+            <span class="pill s-hold"><i></i>On hold</span>
+        </div>
+    </section>
+
+    <!-- 6 · The tour -->
+    <section class="slide tour" aria-label="Tour" id="tour">
+        <div class="tour-top">
+            <p class="kicker">Tour</p>
+            <span class="name">Website relaunch</span>
+            <span class="grow"></span>
+            <span class="today-pill" id="today"><span>Today</span><b id="today-date"></b></span>
+            <span class="tour-count" id="tour-count"></span>
+        </div>
+        <div class="tour-body">
+            <div class="side">
+                <div class="caption" id="caption"></div>
+                <div class="chat box">
+                    <div class="chat-head"><span class="av">C</span>Claude Code · in the project folder</div>
+                    <div class="log" id="log" aria-live="polite"></div>
+                    <div class="composer" id="composer">Ask Claude…</div>
+                </div>
+            </div>
+            <div class="win box">
+                <div class="win-bar">
+                    <span class="dots"><i></i><i></i><i></i></span>
+                    <button class="tab" type="button" id="tab-board" aria-selected="true">Board</button>
+                    <button class="tab" type="button" id="tab-file" aria-selected="false">ROADMAP.md</button>
+                    <span class="url" id="url">localhost:8790/board/</span>
+                </div>
+                <div class="pane" id="pane">
+                    <div class="view" id="view-board"></div>
+                    <div class="view" id="view-file" hidden><div class="md mono" id="md"></div></div>
+                    <div class="toast" id="toast" role="status"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 7 · Simple by design -->
+    <section class="slide" aria-label="Simple by design">
+        <p class="kicker">Under the hood</p>
+        <h2>Simple by design</h2>
+        <div class="facts">
+            <div class="box"><h3>One Markdown file</h3><p>ROADMAP.md sits in the project, next to the work. Readable by anyone, kept in version control.</p></div>
+            <div class="box"><h3>One web page</h3><p>The board is a single page that reads the file. It rereads it every minute while it's open.</p></div>
+            <div class="box"><h3>Works offline</h3><p>Opened with a tiny local server, on your own computer only. Nothing leaves it.</p></div>
+            <div class="box"><h3>Nothing to sign up for</h3><p>No accounts, no database, no subscription. Python 3.8 or newer is all it needs.</p></div>
+            <div class="box"><h3>Works without the plugin</h3><p>Each project gets its own copy of the board, so anyone can open it, with or without Claude Code.</p></div>
+            <div class="box"><h3>Free and open</h3><p>MIT licence. Use it, change it, share it.</p></div>
+        </div>
+    </section>
+
+    <!-- 8 · Get started -->
+    <section class="slide" aria-label="Get started">
+        <p class="kicker">Get started</p>
+        <h2>Try it on your next project</h2>
+        <div class="start">
+            <div class="box">
+                <h3>Install, once (in Claude Code)</h3>
+                <div class="cmd mono">/plugin marketplace add Chithamalai-Karthik/project-board</div>
+                <div class="cmd mono">/plugin install project-board@project-board</div>
+                <h3 style="margin-top: 26px">Open the board</h3>
+                <div class="cmd mono">python board/serve.py</div>
+                <p class="muted">From the project folder. It opens in your browser.</p>
+            </div>
+            <div class="box">
+                <h3>Then just say</h3>
+                <div class="say">
+                    <div class="bubble">Plan this project with the project board.</div>
+                    <div class="bubble">Step 4 is done.</div>
+                    <div class="bubble">We're waiting for the design review.</div>
+                    <div class="bubble">We're behind: reschedule the rest.</div>
+                    <div class="bubble">Open the board.</div>
+                </div>
+            </div>
+        </div>
+        <p class="repo">github.com/<a href="https://github.com/Chithamalai-Karthik/project-board">Chithamalai-Karthik/project-board</a> <span class="muted">· everything on one page: the handout</span></p>
+    </section>
+
+    <!-- 9 · Questions -->
+    <section class="slide end-slide" aria-label="Questions">
+        <p class="kicker">Thank you</p>
+        <h1>Questions?</h1>
+        <p class="lead muted">github.com/Chithamalai-Karthik/project-board</p>
+    </section>
+</div>
+
+<nav id="bar" aria-label="Slides">
+    <button type="button" id="prev" title="Back (←)">← Back</button>
+    <div id="dots"></div>
+    <button type="button" id="next" title="Next (→ or Space)">Next →</button>
+    <button type="button" id="restart" title="Restart the tour (R)" hidden>↺ Tour</button>
+    <button type="button" id="theme" title="Light or dark (T)">◐</button>
+    <button type="button" id="full" title="Full screen (F)">⛶</button>
+    <a href="handout.html" target="_blank" title="The one-page handout (H)">Handout</a>
+</nav>
+
+<script>
+// ---------- Dates (local days, written in English whatever the computer's language) ----------
+const DAY = 86400000;
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const D = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+const between = (a, b) => Math.round((b - a) / DAY);
+const short = (d) => `${d.getDate()} ${MONTHS[d.getMonth()]}`;
+const long = (d) => `${short(d)} ${d.getFullYear()}`;
+const withDay = (d) => `${WEEKDAYS[d.getDay()]} ${long(d)}`;
+
+const esc = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const md = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/`(.+?)`/g, "<code>$1</code>");
+
+// A status cell -> a column (as board/index.html)
+function columnOf(status) {
+    const s = status.replace(/\*/g, "").toLowerCase().trim();
+    if (s.includes("on hold")) return "hold";
+    if (/^done\b/.test(s)) return "done";
+    if (/in progress|being built|built, waiting|waiting for/.test(s)) return "doing";
+    if (/^next\b/.test(s)) return "next";
+    return "todo";
+}
+const COLUMNS = [["todo", "To do"], ["next", "Next"], ["doing", "In progress"], ["done", "Done"], ["hold", "On hold"]];
+const label = (id) => COLUMNS.find((c) => c[0] === id)[1];
+
+// ---------- The demo project. Dates from roadmap.py schedule (2 Nov start, 5 days a week; then from 18 Nov, 6 days) ----------
+function plan() {
+    const step = (n, phase, title, desc, effort, due, status, parts = []) => ({ n, phase, title, desc, effort, due, status, parts });
+    const part = (id, text, effort, due, status) => ({ id, text, effort, due, status });
+    return {
+        updated: "2 November 2026",
+        schedule: { start: "2026-11-02", end: "2026-12-07", line: "start 2026-11-02 · end 2026-12-07 · 36 days, 26 working days (5 days a week) · effort S=1 M=3 L=5 XL=10 working days" },
+        phases: [
+            { id: "A", title: "discovery and design" },
+            { id: "B", title: "build" },
+            { id: "C", title: "launch" },
+        ],
+        steps: [
+            step("1", "A", "Goals and audience", "A workshop with marketing and sales: who the site is for and what it must do.", "S", "2026-11-02", "Next"),
+            step("2", "A", "Sitemap and content plan", "Every page, what's on it, and who writes it.", "M", "2026-11-05", "Not started"),
+            step("3", "A", "Visual design", "The look of the new site, from mood board to final page designs.", "L", "2026-11-12", "Not started", [
+                part("3a", "Mood board and style tiles.", "S", "2026-11-06", "Not started"),
+                part("3b", "Page designs for desktop and phone.", "M", "2026-11-11", "Not started"),
+                part("3c", "Design review with the team.", "S", "2026-11-12", "Not started"),
+            ]),
+            step("4", "B", "Page templates", "Home, product, about and blog pages, built from the designs.", "L", "2026-11-19", "Not started"),
+            step("5", "B", "Content writing", "Texts and images for every page in the content plan.", "M", "2026-11-24", "Not started"),
+            step("6", "B", "Contact and newsletter forms", "Connected to the sales inbox and the mailing list.", "M", "2026-11-27", "Not started"),
+            step("7", "B", "Speed and accessibility check", "Fast on phones, usable with a keyboard and a screen reader.", "S", "2026-11-30", "Not started"),
+            step("8", "C", "Launch campaign", "The announcement email, social posts and a press note.", "M", "2026-12-03", "Not started"),
+            step("9", "C", "Go live", "Switch the address to the new site and watch the first day.", "S", "2026-12-04", "Not started"),
+            step("10", "C", "Analytics dashboard", "Visits, sign-ups and contact requests in one place.", "S", "2026-12-07", "Not started"),
+        ],
+        holdNotes: {},
+        decisions: ["Deadline (2 November 2026): live by 11 December, in time for the holiday campaign."],
+    };
+}
+
+// Sets statuses and due dates: { "3": "In progress", "3b": ["Done 2026-11-11"], "4": [null, "2026-11-28"] }
+function set(m, changes) {
+    for (const [id, v] of Object.entries(changes)) {
+        const [status, due] = Array.isArray(v) ? v : [v, null];
+        const s = m.steps.find((x) => x.n === id);
+        const p = s ? null : m.steps.flatMap((x) => x.parts).find((x) => x.id === id);
+        const t = s || p;
+        if (status) t.status = status;
+        if (due) t.due = due;
+    }
+}
+
+// ---------- The tour: what's said, and what changes ----------
+const you = (text) => ({ kind: "you", text });
+const agent = (text) => ({ kind: "agent", text });
+const tool = (text, ms = 650) => ({ kind: "tool", text, ms });
+const ask = (qs) => ({ kind: "ask", qs });
+const APPLY = { kind: "apply" };                     // the step's own change (step.apply)
+const change = (fn) => ({ kind: "apply", fn });      // a change of its own, when a step has several
+
+const STEPS = [
+    {
+        date: "2026-11-02", view: "board",
+        caption: "<b>A new project.</b> A folder with the team's notes, and no plan yet.",
+        chat: [],
+    },
+    {
+        caption: "<b>Plan.</b> The agent reads what's there, then asks only what it can't work out by itself.",
+        chat: [
+            you("Plan this project with the project board."),
+            tool("Set up board/: the board page, its server, the format and the scheduling script"),
+            APPLY,
+            agent("A few questions before I plan:"),
+            ask([
+                ["What's the project, and what does done look like?", "Relaunch our company website: new design, new content"],
+                ["When do we start?", "Monday 2 November"],
+                ["Is there a deadline?", "Friday 11 December, for the holiday campaign"],
+                ["How many days a week?", "5"],
+            ]),
+        ],
+        setup: true,
+    },
+    {
+        caption: "<b>Schedule.</b> A script works out every due date from effort sizes and working days. Nothing is guessed.",
+        chat: [
+            tool("Wrote ROADMAP.md: 3 phases, 10 steps"),
+            tool("roadmap.py schedule: 26 working days, 2 Nov → 7 Dec"),
+            APPLY,
+            agent("Here's the plan:\n• Discovery and design: 2–12 Nov\n• Build: 13–30 Nov\n• Launch: 1–7 Dec\nIt ends on 7 Dec, 4 days before your deadline."),
+            you("Looks good. Let's start."),
+        ],
+        apply: (m) => Object.assign(m, plan()),
+    },
+    {
+        view: "file",
+        caption: "<b>The file behind it.</b> The whole plan is one readable Markdown file in the project. The board is only a view of it.",
+        chat: [agent("It's all in ROADMAP.md, next to your work. Anyone can read or change it, and the board follows.")],
+    },
+    {
+        date: "2026-11-09", time: "A week later", view: "board",
+        caption: "<b>Work.</b> Nobody drags cards. The roadmap is updated as work happens, and the cards fly to their new column.",
+        chat: [
+            you("The workshop and the content plan are done, and so is the mood board."),
+            tool("Updated ROADMAP.md: steps 1 and 2 done, step 3 in progress, step 4 next"),
+            APPLY,
+            agent("Done: 2 of 10 steps finished, and we're on track."),
+        ],
+        apply: (m) => {
+            set(m, { 1: "Done 2026-11-02", 2: "Done 2026-11-05", 3: "In progress", "3a": "Done 2026-11-06", 4: "Next" });
+            m.updated = "9 November 2026";
+        },
+    },
+    {
+        date: "2026-11-11", time: "Wednesday",
+        caption: "<b>The agent keeps the roadmap itself.</b> Asked to do the work, it marks it in progress, does it, and records that it's done and waiting for the team's review. Nobody had to tell it.",
+        chat: [
+            you("Start the page designs."),
+            tool("Updated ROADMAP.md: 3b in progress"),
+            change((m) => set(m, { "3b": "In progress" })),
+            tool("Designing the home, product, about and blog pages, for desktop and phone…", 3200),
+            tool("Saved 8 page designs in designs/"),
+            tool("Updated ROADMAP.md: 3b done, step 3 waiting for the design review"),
+            change((m) => {
+                set(m, { 3: "Built, waiting for the design review", "3b": "Done 2026-11-11", "3c": "Waiting for the design review" });
+                m.updated = "11 November 2026";
+            }),
+            agent("The page designs are done: 4 pages, for desktop and phone, in designs/. They're now waiting for the team's design review, so step 3 stays in progress until then."),
+        ],
+        glow: ["3"],
+    },
+    {
+        date: "2026-11-18", time: "A week later",
+        caption: "<b>A slip.</b> The review didn't happen. The card turns red and the schedule shows it, before anyone has to ask.",
+        chat: [
+            tool("roadmap.py check: step 3 is 6 days overdue"),
+            agent("The design review hasn't happened, so step 3 is 6 days late and the build can't start. Shall I reschedule what's left?"),
+        ],
+        glow: ["3"],
+    },
+    {
+        caption: "<b>Honest dates.</b> The agent shows what the slip costs, and lets you choose what to do about it.",
+        chat: [
+            you("Yes. The review is booked for Monday. Reschedule the rest."),
+            tool("roadmap.py schedule --from-today (a preview)"),
+            agent("From today the plan would end on Thu 17 Dec: 6 days after your deadline. We could:\n• put a step on hold, or move it to after the launch\n• work 6 days a week\n• shrink steps you think are too big"),
+        ],
+    },
+    {
+        caption: "<b>Reschedule.</b> One sentence: the dates shift, the end date moves, and the decision is written down with its reason.",
+        chat: [
+            you("Put the analytics dashboard on hold until the privacy team approves it, and we'll work Saturdays until launch."),
+            tool("roadmap.py schedule --from-today --days-per-week 6 --write"),
+            APPLY,
+            agent("Done. The plan now ends on Fri 11 Dec, on your deadline. The decision and the reason for the hold are in the roadmap."),
+        ],
+        apply: (m) => {
+            set(m, {
+                3: [null, "2026-11-23"], "3c": [null, "2026-11-23"], 4: [null, "2026-11-28"], 5: [null, "2026-12-02"],
+                6: [null, "2026-12-05"], 7: [null, "2026-12-07"], 8: [null, "2026-12-10"], 9: [null, "2026-12-11"],
+                10: "On hold (18 November 2026: waiting for the privacy team)",
+            });
+            m.holdNotes["10"] = "The privacy team must approve what the site measures before the dashboard is built.";
+            m.schedule = { start: "2026-11-02", end: "2026-12-11", line: "start 2026-11-02 · end 2026-12-11 · 40 days, 35 working days (6 days a week) · effort S=1 M=3 L=5 XL=10 working days" };
+            m.decisions.push("Rescheduled (18 November 2026): the design review slipped to 23 November. To keep the 11 December deadline we work Saturdays until launch, and the analytics dashboard is on hold; the end would otherwise have moved to 17 December.");
+            m.updated = "18 November 2026";
+        },
+    },
+    {
+        date: "2026-12-11", time: "Three weeks later",
+        caption: "<b>Launch day.</b> 9 of 10 steps done, on the deadline. The one on hold still says why.",
+        chat: [
+            you("We're live!"),
+            tool("Updated ROADMAP.md: steps 3 to 9 done"),
+            APPLY,
+            agent("Congratulations! Everything is done except the analytics dashboard, which is on hold for the privacy team."),
+        ],
+        apply: (m) => {
+            set(m, {
+                3: "Done 2026-11-23", "3c": "Done 2026-11-23", 4: "Done 2026-11-28", 5: "Done 2026-12-02",
+                6: "Done 2026-12-05", 7: "Done 2026-12-07", 8: "Done 2026-12-10", 9: "Done 2026-12-11",
+            });
+            m.updated = "11 December 2026";
+        },
+    },
+];
+// Each step's date and view carry on from the step before
+STEPS.forEach((s, i) => {
+    s.date ??= STEPS[i - 1].date;
+    s.view ??= i && STEPS[i - 1].view === "file" ? "board" : (i ? STEPS[i - 1].view : "board");
+});
+
+// ---------- ROADMAP.md, written from the model ----------
+function roadmapText(m) {
+    if (!m.steps) return "";
+    const L = [];
+    L.push("# Website relaunch roadmap", "", `The plan for the new company website. Last updated ${m.updated}.`, "",
+        "## About the project", "", "Relaunch the company website: a new design, new content, and live before the holiday campaign.", "",
+        "## Schedule", "", `**Schedule:** ${m.schedule.line}`, "");
+    for (const p of m.phases) {
+        L.push(`## Phase ${p.id}: ${p.title}`, "", "| # | Feature | Effort | Due | Status |", "| --- | --- | --- | --- | --- |");
+        const mine = m.steps.filter((s) => s.phase === p.id);
+        for (const s of mine) L.push(`| ${s.n} | **${s.title}.** ${s.desc} | ${s.effort} | ${s.due} | ${s.status} |`);
+        for (const s of mine.filter((x) => x.parts.length)) {
+            L.push("", `Step ${s.n} is built in parts:`, "", "| Part | What | Effort | Due | Status |", "| --- | --- | --- | --- | --- |");
+            for (const q of s.parts) L.push(`| ${q.id} | ${q.text} | ${q.effort} | ${q.due} | ${q.status} |`);
+        }
+        for (const s of mine.filter((x) => m.holdNotes[x.n])) L.push("", `Step ${s.n} is **on hold**. ${m.holdNotes[s.n]}`);
+        L.push("");
+    }
+    L.push("## Decisions", "", ...m.decisions.map((d) => `- ${d}`));
+    return L.join("\n");
+}
+
+// ---------- The board, drawn from the model (board/index.html, compact) ----------
+let model = {};
+let today = D(STEPS[0].date);
+const phaseIndex = (id) => model.phases.findIndex((p) => p.id === id);
+const phaseColor = (id) => `var(--p${phaseIndex(id) % 3})`;
+const colOf = (s) => columnOf(s.status);
+const dueOf = (s) => (s.due ? D(s.due) : null);
+const isLate = (s) => s.due && !["done", "hold"].includes(colOf(s)) && between(today, dueOf(s)) < 0;
+
+function dueChip(s) {
+    const col = colOf(s);
+    if (col === "done") {
+        const m = s.status.match(/\d{4}-\d{2}-\d{2}/);
+        return `<span class="due done">✓ ${short(D(m ? m[0] : s.due))}</span>`;
+    }
+    const due = dueOf(s);
+    const left = between(today, due);
+    if (col === "hold") return `<span class="due">Due ${short(due)}</span>`;
+    if (left < 0) return `<span class="due late">Overdue · ${-left} d</span>`;
+    if (left === 0) return `<span class="due soon">Due today</span>`;
+    if (left <= 3) return `<span class="due soon">Due in ${left} d</span>`;
+    return `<span class="due">Due ${short(due)}</span>`;
+}
+
+function cardHTML(s) {
+    const col = colOf(s);
+    const plain = /^(done(\s+\d{4}-\d{2}-\d{2})?|not started|next|in progress)$/i.test(s.status);
+    const partsDone = s.parts.filter((p) => colOf(p) === "done").length;
+    let h = `<h6>${esc(s.title)}</h6><div class="meta"><span class="chip phase">${s.phase}</span><span>Step ${s.n}</span><span class="chip">${s.effort}</span>`
+        + (s.parts.length ? `<span>${partsDone}/${s.parts.length} parts</span>` : "") + dueChip(s) + `</div>`;
+    if (!plain) h += `<p class="status">${md(s.status)}</p>`;
+    if (model.holdNotes[s.n] && col === "hold") h += `<div class="note"><b>Why on hold:</b> ${md(model.holdNotes[s.n])}</div>`;
+    if (s.parts.length && col !== "done" && col !== "todo") {
+        h += `<ul class="parts">` + s.parts.map((p) => {
+            const late = isLate(p);
+            return `<li class="s-${colOf(p)}"><span class="pdot"></span><span class="pid">${p.id}</span><span class="ptxt">${esc(p.text.replace(/\.$/, ""))}${late ? ` <span class="late">· overdue</span>` : ""}</span></li>`;
+        }).join("") + `</ul>`;
+    }
+    return h;
+}
+
+function phaseSpan(p) {
+    const last = (id) => {
+        const d = model.steps.filter((s) => s.phase === id).map(dueOf);
+        return new Date(Math.max(...d));
+    };
+    const i = phaseIndex(p.id);
+    const from = i ? new Date(last(model.phases[i - 1].id).getTime() + DAY) : D(model.schedule.start);
+    return { from, to: last(p.id) };
+}
+
+function timelineHTML() {
+    const start = D(model.schedule.start), end = D(model.schedule.end);
+    const total = Math.max(1, between(start, end));
+    const pos = (d) => Math.min(100, Math.max(0, (between(start, d) / total) * 100));
+    const steps = model.steps;
+    const done = steps.filter((s) => colOf(s) === "done").length;
+    const late = steps.filter(isLate).length;
+    const state = today > end && done < steps.length ? `<span class="tl-state late">Past the end date</span>`
+        : late ? `<span class="tl-state late">${late} overdue</span>` : `<span class="tl-state ok">On track</span>`;
+    const bars = model.phases.map((p) => {
+        const span = phaseSpan(p);
+        const left = pos(span.from), right = pos(new Date(span.to.getTime() + DAY));
+        return `<div class="tl-phase" style="--phase: ${phaseColor(p.id)}; left: ${left}%; width: ${Math.max(1.5, right - left)}%">${p.id}</div>`;
+    }).join("");
+    const day = between(start, today) + 1;
+    const pct = Math.round((done / steps.length) * 100);
+    return `<div class="tl-head"><b>Schedule</b>${state}</div>`
+        + `<div class="tl-dates">${long(start)} → ${long(end)} · ${total + 1} days · day ${day}</div>`
+        + `<div class="tl-track">${bars}<div class="tl-today" style="left: ${pos(today)}%"></div></div>`
+        + `<div class="tl-work"><span>Work done</span><span class="meter"><i style="width: ${pct}%"></i></span><span>${pct}% · ${Math.round(Math.min(100, ((day - 1) / (total + 1)) * 100))}% of the time</span></div>`;
+}
+
+function phaseHTML(p) {
+    const mine = model.steps.filter((s) => s.phase === p.id);
+    const done = mine.filter((s) => colOf(s) === "done").length;
+    const late = mine.filter(isLate).length;
+    const span = phaseSpan(p);
+    return `<div class="top"><b>Phase ${p.id} · ${p.title}</b><span class="count">${done} / ${mine.length}</span></div>`
+        + `<div class="dates">${short(span.from)} → ${short(span.to)}${late ? ` · <span style="color: var(--late)">${late} overdue</span>` : ""}</div>`
+        + `<div class="bar">${mine.map((s) => `<i class="${colOf(s) === "todo" ? "" : colOf(s)}"></i>`).join("")}</div>`;
+}
+
+const viewBoard = document.getElementById("view-board");
+const pane = document.getElementById("pane");
+
+// moved: step id -> { title, from, to }; deal: cards come in one by one; glow: cards to light up
+function renderBoard({ moved = new Map(), deal = false, glow = [], animate = true } = {}) {
+    if (!model.steps) {
+        viewBoard.innerHTML = STEPS[tourStep]?.setup || tourStep > 1
+            ? `<div class="empty-state"><b>The board is ready</b>It shows the plan as soon as there's a ROADMAP.md.<div class="tree mono">website-relaunch/<br>├─ <span class="new">board/</span><br>│  ├─ <span class="new">index.html</span>  <span class="new">serve.py</span><br>│  └─ <span class="new">FORMAT.md</span>  <span class="new">roadmap.py</span><br>└─ notes/</div></div>`
+            : `<div class="empty-state"><b>No plan yet</b>The project folder has the team's notes, and nothing else.<div class="tree mono">website-relaunch/<br>└─ notes/<br>   ├─ kickoff.md<br>   └─ brand-guide.pdf</div></div>`;
+        return;
+    }
+    const k = scale();
+    const paneBox = pane.getBoundingClientRect();
+    const before = new Map();
+    if (animate) for (const el of viewBoard.querySelectorAll(".card[data-step]")) before.set(el.dataset.step, el.getBoundingClientRect());
+
+    const steps = model.steps;
+    const done = steps.filter((s) => colOf(s) === "done").length;
+    const late = steps.filter(isLate).length;
+    viewBoard.innerHTML = `<div class="bd">`
+        + `<div class="bd-head"><h4>Website relaunch board</h4><span class="sub">${done} of ${steps.length} steps done${late ? ` · ${late} overdue` : ""} · roadmap updated ${model.updated}</span></div>`
+        + `<div class="bd-top"><section class="timeline">${timelineHTML()}</section>`
+        + model.phases.map((p) => `<div class="phase" style="--phase: ${phaseColor(p.id)}">${phaseHTML(p)}</div>`).join("") + `</div>`
+        + `<div class="board">` + COLUMNS.map(([id, name]) => {
+            const cards = steps.filter((s) => colOf(s) === id);
+            return `<section class="col s-${id}"><h5><span class="dot"></span>${name}<span class="n">${cards.length}</span></h5><div class="cards">`
+                + (cards.length ? cards.map((s) => `<article class="card" data-step="${s.n}" style="--phase: ${phaseColor(s.phase)}">${cardHTML(s)}</article>`).join("") : `<div class="nothing">Nothing here</div>`)
+                + `</div></section>`;
+        }).join("") + `</div></div>`;
+
+    clip();
+    const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (deal && !still) {
+        viewBoard.querySelectorAll(".card").forEach((el, i) => { el.classList.add("deal"); el.style.animationDelay = `${120 + i * 70}ms`; });
+    }
+    for (const n of glow) viewBoard.querySelector(`.card[data-step="${n}"]`)?.classList.add("arrived");
+    if (!animate) return;
+    // Moved cards fly from their old column to the new one; the others slide to their new places
+    for (const el of viewBoard.querySelectorAll(".card[data-step]")) {
+        const from = before.get(el.dataset.step);
+        if (!from) continue;
+        const to = el.getBoundingClientRect();
+        const dx = (from.left - to.left) / k, dy = (from.top - to.top) / k;
+        if (moved.has(el.dataset.step)) {
+            if (still) { el.classList.add("arrived"); continue; }
+            const ghost = el.cloneNode(true);
+            ghost.classList.add("ghost");
+            Object.assign(ghost.style, { left: `${(from.left - paneBox.left) / k}px`, top: `${(from.top - paneBox.top) / k}px`, width: `${to.width / k}px` });
+            pane.append(ghost);
+            el.style.visibility = "hidden";
+            const fly = ghost.animate([
+                { transform: "translate(0, 0) scale(1)" },
+                { transform: `translate(${-dx * 0.5}px, ${-dy * 0.5 - 40}px) scale(1.06)`, offset: 0.5 },
+                { transform: `translate(${-dx}px, ${-dy}px) scale(1)` },
+            ], { duration: 950, delay: 120 * [...moved.keys()].indexOf(el.dataset.step), easing: "cubic-bezier(.5, 0, .3, 1)", fill: "both" });
+            fly.onfinish = () => { ghost.remove(); el.style.visibility = ""; el.classList.add("arrived"); };
+        } else if (!still && Math.abs(dy) > 1 && Math.abs(dx) < 1) {
+            el.animate([{ transform: `translateY(${dy}px)` }, { transform: "none" }], { duration: 500, easing: "ease-out" });
+        }
+    }
+    if (moved.size) toast(moved);
+}
+
+// A column with more cards than fit shows "+ N more" (the real board scrolls each column)
+function clip() {
+    for (const list of viewBoard.querySelectorAll(".cards")) {
+        const cards = [...list.querySelectorAll(".card")];
+        const bottom = list.getBoundingClientRect().bottom;
+        const hide = cards.filter((c) => c.getBoundingClientRect().bottom > bottom);
+        if (!hide.length) continue;
+        // room for the note too
+        const shown = cards.filter((c) => !hide.includes(c));
+        if (shown.length) hide.unshift(shown.pop());
+        for (const c of hide) c.remove();
+        list.insertAdjacentHTML("beforeend", `<div class="more">+ ${hide.length} more</div>`);
+    }
+}
+
+let toastTimer = 0;
+function toast(moved) {
+    const el = document.getElementById("toast");
+    const n = moved.size;
+    const list = [...moved.values()];
+    el.innerHTML = `<b>${n} step${n === 1 ? "" : "s"} changed</b>` + list.slice(0, 4).map((m) => `<span>${esc(m.title)}: ${label(m.from)} → ${label(m.to)}</span>`).join("")
+        + (list.length > 4 ? `<span>and ${list.length - 4} more</span>` : "");
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove("show"), 4500);
+}
+
+let lastText = "";
+function renderFile() {
+    const text = roadmapText(model);
+    const box = document.getElementById("md");
+    if (!text) {
+        box.innerHTML = `<div class="muted">  (no ROADMAP.md yet)</div>`;
+        lastText = "";
+        return;
+    }
+    const was = new Set(lastText.split("\n"));
+    const lines = text.split("\n");
+    box.innerHTML = lines.map((l) => `<div class="${/^#/.test(l) ? "h" : ""}${lastText && l && !was.has(l) ? " changed" : ""}">${esc(l)}</div>`).join("");
+    lastText = text;
+    // Brings the first change into view
+    const first = box.querySelector(".changed");
+    box.scrollTop = first ? Math.max(0, first.offsetTop - 120) : 0;
+}
+
+function showView(v) {
+    view = v;
+    document.getElementById("view-board").hidden = v !== "board";
+    document.getElementById("view-file").hidden = v !== "file";
+    document.getElementById("tab-board").setAttribute("aria-selected", String(v === "board"));
+    document.getElementById("tab-file").setAttribute("aria-selected", String(v === "file"));
+    document.getElementById("url").textContent = v === "board" ? "localhost:8790/board/" : "website-relaunch/ROADMAP.md";
+}
+
+// ---------- Playing a step: the chat types out, the board changes at APPLY ----------
+let tourStep = 0;
+let view = "board";
+let running = false;
+let hurry = false;       // the presenter pressed Next mid-step: finish it at once
+const log = document.getElementById("log");
+const composer = document.getElementById("composer");
+
+const wait = (ms) => new Promise((r) => (hurry ? r() : setTimeout(r, ms)));
+function scrollLog() { log.scrollTop = log.scrollHeight; }
+
+function addMsg(cls, html) {
+    const el = document.createElement("div");
+    el.className = `msg ${cls}`;
+    el.innerHTML = html;
+    log.append(el);
+    scrollLog();
+    return el;
+}
+
+async function say(m) {
+    if (m.kind === "you") {
+        composer.classList.add("typing");
+        for (let i = 1; i <= m.text.length && !hurry; i++) {
+            composer.textContent = m.text.slice(0, i);
+            // about 15 characters a second, a little uneven, with a short pause after a comma or full stop
+            await wait((/[,.:!?]/.test(m.text[i - 1]) ? 180 : 45) + Math.random() * 40);
+        }
+        composer.classList.remove("typing");
+        composer.textContent = "Ask Claude…";
+        addMsg("you", esc(m.text));
+        await wait(500);
+    } else if (m.kind === "agent") {
+        const el = addMsg("agent", "");
+        const words = m.text.split(/(\s+)/);
+        for (let i = 1; i <= words.length && !hurry; i += 2) {
+            el.innerHTML = esc(words.slice(0, i).join(""));
+            scrollLog();
+            await wait(32);
+        }
+        el.innerHTML = esc(m.text);
+        scrollLog();
+        await wait(400);
+    } else if (m.kind === "tool") {
+        const el = addMsg("tool busy", `<i>●</i><span class="mono">${esc(m.text)}</span>`);
+        await wait(m.ms);
+        el.classList.remove("busy");
+        el.querySelector("i").textContent = "✓";
+        await wait(250);
+    } else if (m.kind === "ask") {
+        const el = addMsg("ask", "");
+        for (const [q, a] of m.qs) {
+            el.insertAdjacentHTML("beforeend", `<div class="q">${esc(q)}</div>`);
+            scrollLog();
+            await wait(450);
+            el.insertAdjacentHTML("beforeend", `<span class="a">${esc(a)}</span>`);
+            scrollLog();
+            await wait(350);
+        }
+    }
+}
+
+function setToday(date, tick) {
+    today = D(date);
+    document.getElementById("today-date").textContent = withDay(today);
+    const pill = document.getElementById("today");
+    if (tick) {
+        pill.classList.remove("tick");
+        void pill.offsetWidth;
+        pill.classList.add("tick");
+    }
+}
+
+function columnsOf(m) { return new Map((m.steps || []).map((s) => [s.n, colOf(s)])); }
+
+function apply(step, fn = step.apply) {
+    const was = columnsOf(model);
+    const first = !model.steps;
+    fn?.(model);
+    const moved = new Map();
+    for (const s of model.steps || []) {
+        if (was.has(s.n) && was.get(s.n) !== colOf(s)) moved.set(s.n, { title: s.title, from: was.get(s.n), to: colOf(s) });
+    }
+    renderFile();
+    renderBoard({ moved, deal: first && !hurry, glow: step.glow || [], animate: !hurry });
+}
+
+async function play(i) {
+    const step = STEPS[i];
+    running = true;
+    hurry = false;
+    tourStep = i;
+    updateCount();
+    document.getElementById("caption").innerHTML = step.caption;
+    for (const el of log.querySelectorAll(".msg")) el.classList.add("old");
+    const dateChanged = step.date !== STEPS[i - 1]?.date;
+    if (step.time) addMsg("time", `${esc(step.time)} · ${withDay(D(step.date))}`);
+    setToday(step.date, dateChanged);
+    if (step.view !== view) showView(step.view);
+    if (dateChanged) renderBoard({ glow: step.apply ? [] : step.glow || [], animate: false });
+    let applied = !step.apply;
+    for (const m of step.chat) {
+        if (m.kind === "apply") { apply(step, m.fn || step.apply); applied = true; await wait(900); continue; }
+        await say(m);
+    }
+    if (!applied) apply(step);
+    running = false;
+    hurry = false;
+}
+
+// Rebuilds the tour as it is at the end of step i, with no animation (going back, or arriving from a later slide)
+function jump(i) {
+    hurry = true;
+    model = {};
+    lastText = "";
+    log.replaceChildren();
+    for (let j = 0; j <= i; j++) {
+        const s = STEPS[j];
+        if (s.time) addMsg("time", `${esc(s.time)} · ${withDay(D(s.date))}`);
+        for (const m of s.chat) {
+            if (m.kind === "apply") { (m.fn || s.apply)?.(model); renderFile(); continue; }
+            if (m.kind === "you") addMsg("you", esc(m.text));
+            else if (m.kind === "agent") addMsg("agent", esc(m.text));
+            else if (m.kind === "tool") addMsg("tool", `<i>✓</i><span class="mono">${esc(m.text)}</span>`);
+            else if (m.kind === "ask") addMsg("ask", m.qs.map(([q, a]) => `<div class="q">${esc(q)}</div><span class="a">${esc(a)}</span>`).join(""));
+        }
+        if (j < i) for (const el of log.querySelectorAll(".msg")) el.classList.add("old");
+        if (s.apply && !s.chat.some((m) => m.kind === "apply")) { s.apply(model); renderFile(); }
+    }
+    tourStep = i;
+    setToday(STEPS[i].date, false);
+    document.getElementById("caption").innerHTML = STEPS[i].caption;
+    showView(STEPS[i].view);
+    renderBoard({ animate: false, glow: STEPS[i].glow || [] });
+    for (const el of log.querySelectorAll(".msg")) el.style.animation = "none";
+    scrollLog();
+    updateCount();
+    hurry = false;
+    running = false;
+}
+
+function updateCount() {
+    document.getElementById("tour-count").textContent = `${tourStep + 1} / ${STEPS.length}`;
+}
+
+// The tour's own Next and Back: true when it used the key
+function tourNext() {
+    if (running) { hurry = true; return true; }
+    if (tourStep < STEPS.length - 1) { play(tourStep + 1); return true; }
+    return false;
+}
+function tourBack() {
+    if (tourStep > 0) { jump(tourStep - 1); return true; }
+    return false;
+}
+
+document.getElementById("tab-board").onclick = () => showView("board");
+document.getElementById("tab-file").onclick = () => showView("file");
+
+// ---------- Slides ----------
+const slides = [...document.querySelectorAll(".slide")];
+const TOUR = slides.indexOf(document.getElementById("tour"));
+let current = -1;
+
+function go(i, { fromEnd = false } = {}) {
+    i = Math.max(0, Math.min(slides.length - 1, i));
+    if (i === current) return;
+    slides.forEach((s, j) => s.classList.toggle("on", j === i));
+    const entering = i === TOUR && current !== TOUR;
+    current = i;
+    if (entering) {
+        if (fromEnd) jump(STEPS.length - 1);
+        else jump(0);
+    }
+    document.getElementById("restart").hidden = i !== TOUR;
+    document.querySelectorAll("#dots button").forEach((b, j) => b.setAttribute("aria-current", String(j === i)));
+    try { history.replaceState(null, "", `#${i + 1}`); } catch (e) { /* opened from the disk in some browsers */ }
+}
+function next() {
+    if (current === TOUR && tourNext()) return;
+    go(current + 1);
+}
+function back() {
+    if (current === TOUR && tourBack()) return;
+    go(current - 1, { fromEnd: current - 1 === TOUR });
+}
+
+const dots = document.getElementById("dots");
+slides.forEach((s, j) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.title = s.getAttribute("aria-label");
+    b.onclick = () => go(j);
+    dots.append(b);
+});
+document.getElementById("next").onclick = next;
+document.getElementById("prev").onclick = back;
+document.getElementById("restart").onclick = () => jump(0);
+
+// Theme: follows the computer unless chosen here (remembered on this computer)
+const THEME_KEY = "boardTalkTheme";
+function applyTheme(t) {
+    if (t) document.documentElement.dataset.theme = t;
+    else delete document.documentElement.dataset.theme;
+}
+try { applyTheme(localStorage.getItem(THEME_KEY)); } catch (e) { /* storage unavailable */ }
+function toggleTheme() {
+    const dark = document.documentElement.dataset.theme
+        ? document.documentElement.dataset.theme === "dark"
+        : matchMedia("(prefers-color-scheme: dark)").matches;
+    applyTheme(dark ? "light" : "dark");
+    try { localStorage.setItem(THEME_KEY, dark ? "light" : "dark"); } catch (e) { /* storage unavailable */ }
+}
+document.getElementById("theme").onclick = toggleTheme;
+function toggleFull() {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen?.();
+}
+document.getElementById("full").onclick = toggleFull;
+
+document.addEventListener("keydown", (e) => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const k = e.key;
+    if (["ArrowRight", "PageDown", " ", "Enter"].includes(k)) { e.preventDefault(); next(); }
+    else if (["ArrowLeft", "PageUp", "Backspace"].includes(k)) { e.preventDefault(); back(); }
+    else if (k === "Home") go(0);
+    else if (k === "End") go(slides.length - 1);
+    else if (k === "t" || k === "T") toggleTheme();
+    else if (k === "f" || k === "F") toggleFull();
+    else if (k === "h" || k === "H") window.open("handout.html", "_blank");
+    else if ((k === "m" || k === "M") && current === TOUR) showView(view === "board" ? "file" : "board");
+    else if ((k === "r" || k === "R") && current === TOUR) jump(0);
+});
+// Clicking the slide (not a button) moves on, as a clicker would
+document.getElementById("stage").addEventListener("click", (e) => {
+    if (e.target.closest("button, a, .log, .md")) return;
+    next();
+});
+
+// The bar shows while the mouse moves
+let idle = 0;
+document.addEventListener("mousemove", () => {
+    document.body.classList.add("moving");
+    clearTimeout(idle);
+    idle = setTimeout(() => document.body.classList.remove("moving"), 1800);
+});
+
+// The stage fits the window
+function scale() {
+    return Math.min(innerWidth / 1600, innerHeight / 900);
+}
+function fit() { document.getElementById("stage").style.setProperty("--k", scale()); }
+addEventListener("resize", fit);
+fit();
+
+// The little board on the title slide
+document.getElementById("mini").innerHTML = [["--todo", [2, 1, 0]], ["--next", [1]], ["--doing", [0, 2]], ["--done", [0, 0, 1]], ["--hold", [2]]]
+    .map(([c, cards]) => `<div class="mc"><i class="mh" style="--c: var(${c})"></i>${cards.map((p) => `<div class="mk" style="--phase: var(--p${p})"></div>`).join("")}</div>`).join("");
+
+go(Math.max(0, Math.min(slides.length - 1, (parseInt(location.hash.slice(1), 10) || 1) - 1)));
+</script>
+</body>
+</html>

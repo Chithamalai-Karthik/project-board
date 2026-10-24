@@ -77,6 +77,14 @@ into `<project>/board/`, and start from `templates/ROADMAP.md`. Other AI agents 
 python plugins/project-board/skills/plan/board/serve.py --root examples/demo
 ```
 
+## Presentation
+
+`presentation/index.html` introduces the plugin to a team: a few slides and a guided tour of a made-up project, with a
+scripted chat and a working board. It works offline: open the file in a browser. Keys: → or Space next, ← back,
+F full screen, T light or dark, M board or ROADMAP.md, R restart the tour. `presentation/handout.html` is a one-page
+handout that prints on A4. The fonts (Josefin Sans, Quicksand) are under the SIL Open Font License, in
+`presentation/fonts/`.
+
 ## What's in here
 
 | Path | What |
@@ -89,6 +97,7 @@ python plugins/project-board/skills/plan/board/serve.py --root examples/demo
 | `.../plan/scripts/roadmap.py` | `check` and `schedule` |
 | `.../plan/templates/ROADMAP.md` | the starting roadmap |
 | `examples/demo/` | a sample project, part way through |
+| `presentation/` | the slides and tour, and the one-page handout |
 
 ## Releasing a change
 
