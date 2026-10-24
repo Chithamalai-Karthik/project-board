@@ -94,3 +94,7 @@ python plugins/project-board/skills/plan/board/serve.py --root examples/demo
 
 Edit the files, bump `version` in `plugins/project-board/.claude-plugin/plugin.json` (users only get a new version
 when it changes), check with `claude plugin validate .`, and push.
+
+## Licence
+
+MIT: see [LICENSE](LICENSE).

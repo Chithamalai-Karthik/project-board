@@ -1,6 +1,6 @@
 {
   "name": "project-board",
-  "owner": { "name": "Karthik" },
+  "owner": { "name": "Chithamalai Karthik" },
   "description": "Plan projects with your agent in ROADMAP.md and follow them on a live kanban board with dates.",
   "plugins": [
     {
