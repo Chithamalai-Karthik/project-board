@@ -1,0 +1,12 @@
+{
+  "name": "project-board",
+  "owner": { "name": "Karthik" },
+  "description": "Plan projects with your agent in ROADMAP.md and follow them on a live kanban board with dates.",
+  "plugins": [
+    {
+      "name": "project-board",
+      "source": "./plugins/project-board",
+      "description": "Plan a project in ROADMAP.md with phases, steps and due dates, shown as a live kanban board."
+    }
+  ]
+}
