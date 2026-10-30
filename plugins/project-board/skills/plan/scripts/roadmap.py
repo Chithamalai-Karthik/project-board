@@ -6,8 +6,9 @@
                                           [--effort S=1,M=3,L=5,XL=10] [--from-today] [--write]
 
 init      sets the board up in a project: copies the board page, its server, FORMAT.md and this script into
-          <project>/board/ (replacing older copies), and the starting ROADMAP.md, README.md and CLAUDE.md into
-          <project>/ for each one that isn't there yet (existing files are never touched).
+          <project>/board/ (replacing older copies), and the starting ROADMAP.md, README.md, AGENTS.md and CLAUDE.md
+          (one line, @AGENTS.md) into <project>/ for each one that isn't there yet (existing files are never touched).
+          A project with its own CLAUDE.md and no AGENTS.md gets no AGENTS.md: its CLAUDE.md stays its agent file.
 check     reports format errors (exit code 1) and warnings: missing due dates, dates out of order or outside the
           schedule, overdue steps, parts without their step.
 schedule  works out every unfinished step's due date in roadmap order, one after another, from its effort size
@@ -397,14 +398,20 @@ def init(project):
         print("board:  ", os.path.relpath(dst, project))
     # The roadmap and the project's documentation: started from the templates, never overwritten
     # (a project's own board/roadmap.py has no templates beside it, so it only reports what's missing)
-    for name in ("ROADMAP.md", "README.md", "CLAUDE.md"):
+    for name in ("ROADMAP.md", "README.md", "AGENTS.md", "CLAUDE.md"):
         path = os.path.join(project, name)
         template = os.path.join(skill, "templates", name)
         if os.path.exists(path):
             print(f"kept:    {name} (already there)")
+        elif name == "AGENTS.md" and os.path.exists(os.path.join(project, "CLAUDE.md")):
+            # Nothing would load a template AGENTS.md beside the project's own CLAUDE.md
+            print("skipped: AGENTS.md (the project's CLAUDE.md is its agent file)")
         elif os.path.exists(template):
             shutil.copyfile(template, path)
-            print(f"new:     {name} (the template: fill in every {{{{...}}}})")
+            if name == "CLAUDE.md":
+                print("new:     CLAUDE.md (one line, @AGENTS.md: Claude Code loads AGENTS.md through it)")
+            else:
+                print(f"new:     {name} (the template: fill in every {{{{...}}}})")
         else:
             print(f"missing: {name} (run init from the plugin to start it from the template)")
     print("Open the board: python board/serve.py")

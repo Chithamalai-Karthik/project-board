@@ -27,7 +27,8 @@ will have and fills the table in as files are created.}}
 | File | What it does |
 | --- | --- |
 | `ROADMAP.md` | what is built, what comes next, and the decisions behind each step |
-| `CLAUDE.md` | for an AI agent working on the project: where to start reading, and the standing rules |
+| `AGENTS.md` | for an AI agent working on the project: where to start reading, and the standing rules |
+| `CLAUDE.md` | one line, `@AGENTS.md`: Claude Code loads AGENTS.md through it |
 | `board/` | the project board (a kanban view of ROADMAP.md): `python board/serve.py` |
 
 ## Project board

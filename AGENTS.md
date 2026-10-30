@@ -1,7 +1,7 @@
 # Project board (Claude Code plugin)
 
 A Claude Code plugin, and its own marketplace: the agent plans a project in `ROADMAP.md` (phases, steps, parts, due
-dates), shows it as a live kanban board, writes the project's `README.md` and `CLAUDE.md`, and keeps all three
+dates), shows it as a live kanban board, writes the project's `README.md` and `AGENTS.md`, and keeps all three
 current as work happens. Public repo: github.com/Chithamalai-Karthik/project-board.
 
 ## Read first
@@ -18,7 +18,8 @@ current as work happens. Public repo: github.com/Chithamalai-Karthik/project-boa
   `scripts/roadmap.py` (`init`, `check`, `schedule`) is Python 3.8+, standard library only. Keep it that way: the
   files are copied into every user's project and must run there as they are.
 - `init` copies `board/`, `FORMAT.md` and `roadmap.py` into `<project>/board/`, and the templates into the project.
-- `templates/` hold the starting `ROADMAP.md`, `README.md` and `CLAUDE.md`, with `{{…}}` for what the agent fills.
+- `templates/` hold the starting `ROADMAP.md`, `README.md` and `AGENTS.md`, with `{{…}}` for what the agent fills,
+  and `CLAUDE.md`, the one line `@AGENTS.md`.
 - `examples/demo/` is a sample project part way through; `presentation/` is the talk (slides, a scripted offline
   tour, a one-page handout).
 - Match the surrounding writing: a header comment per file, short comments that say why, plain wording.
@@ -29,8 +30,9 @@ current as work happens. Public repo: github.com/Chithamalai-Karthik/project-boa
 - **Edit this repo, never the installed copy** in `~/.claude/plugins/cache/` (it is replaced on update).
 - **Bump `version`** in `plugins/project-board/.claude-plugin/plugin.json` for every change users should get;
   without a new version they don't get it.
-- **A user's files are theirs:** `init` never overwrites an existing `ROADMAP.md`, `README.md` or `CLAUDE.md`, and
-  the skill never rewrites the user's text (it offers to add missing sections). Only `board/` files are replaced.
+- **A user's files are theirs:** `init` never overwrites an existing `ROADMAP.md`, `README.md`, `AGENTS.md` or
+  `CLAUDE.md`, and the skill never rewrites the user's text (it offers to add missing sections). Only `board/` files
+  are replaced.
 - **Change the format in all its places together:** FORMAT.md, the parser in `board/index.html`, `roadmap.py`
   (`check` and `schedule`), the template, the demo, and the SKILL's "Format essentials".
 - **The board stays local:** `serve.py` binds 127.0.0.1 only; no accounts, no cloud, no tracking.

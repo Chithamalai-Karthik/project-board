@@ -588,7 +588,7 @@ const STEPS = [
         caption: "<b>Plan.</b> The agent reads what's there, then asks only what it can't work out by itself.",
         chat: [
             you("Plan this project with the project board."),
-            tool("Set up board/: the board page, its server, the format and the scheduling script"),
+            tool("Set up board/ (the board page, its server, the format and the scheduling script), and the starting docs"),
             APPLY,
             agent("A few questions before I plan:"),
             ask([
@@ -605,6 +605,7 @@ const STEPS = [
         chat: [
             tool("Wrote ROADMAP.md: 3 phases, 10 steps"),
             tool("roadmap.py schedule: 26 working days, 2 Nov → 7 Dec"),
+            tool("Wrote README.md and AGENTS.md (Claude Code reads it through CLAUDE.md, the one line @AGENTS.md)"),
             APPLY,
             agent("Here's the plan:\n• Discovery and design: 2–12 Nov\n• Build: 13–30 Nov\n• Launch: 1–7 Dec\nIt ends on 7 Dec, 4 days before your deadline."),
             you("Looks good. Let's start."),
@@ -821,7 +822,7 @@ const pane = document.getElementById("pane");
 function renderBoard({ moved = new Map(), deal = false, glow = [], animate = true } = {}) {
     if (!model.steps) {
         viewBoard.innerHTML = STEPS[tourStep]?.setup || tourStep > 1
-            ? `<div class="empty-state"><b>The board is ready</b>It shows the plan as soon as there's a ROADMAP.md.<div class="tree mono">website-relaunch/<br>├─ <span class="new">board/</span><br>│  ├─ <span class="new">index.html</span>  <span class="new">serve.py</span><br>│  └─ <span class="new">FORMAT.md</span>  <span class="new">roadmap.py</span><br>└─ notes/</div></div>`
+            ? `<div class="empty-state"><b>The board is ready</b>It shows the plan as soon as there's a ROADMAP.md.<div class="tree mono">website-relaunch/<br>├─ <span class="new">board/</span><br>│  ├─ <span class="new">index.html</span>  <span class="new">serve.py</span><br>│  └─ <span class="new">FORMAT.md</span>  <span class="new">roadmap.py</span><br>├─ <span class="new">README.md</span>  <span class="new">AGENTS.md</span>  <span class="new">CLAUDE.md</span><br>└─ notes/</div></div>`
             : `<div class="empty-state"><b>No plan yet</b>The project folder has the team's notes, and nothing else.<div class="tree mono">website-relaunch/<br>└─ notes/<br>   ├─ kickoff.md<br>   └─ brand-guide.pdf</div></div>`;
         return;
     }

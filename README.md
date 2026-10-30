@@ -13,8 +13,9 @@ cards fly to their new column, overdue steps turn red, and the timeline shows wh
   It also reschedules what's left when something slips.
 - **Works offline:** the board is a single HTML page, opened with a tiny local server.
 - **Documentation that stays current:** the agent also writes `README.md`, with a map of which file controls what,
-  and `CLAUDE.md`, with where to start reading and the project's standing rules, and updates both as it works. A
-  new team member, or a new agent session, reads the map instead of the whole codebase (far fewer tokens).
+  and `AGENTS.md`, with where to start reading and the project's standing rules, and updates both as it works
+  (`CLAUDE.md` is one line, `@AGENTS.md`, so Claude Code reads the same file). A new team member, or a new agent
+  session, reads the map instead of the whole codebase (far fewer tokens).
 
 ## Install (Claude Code)
 
@@ -49,8 +50,10 @@ In any project folder, ask the agent, for example:
 
 The agent sets up `board/` in the project (the page, a tiny server, the format and the scheduling script) and asks
 a few questions: what the project is, the start date, any deadline, days a week, and anything later sessions must
-never touch. Then it writes `ROADMAP.md` with dates, `README.md` and `CLAUDE.md`, and shows you the plan to approve.
-An existing README or CLAUDE.md is never overwritten: the agent offers to add only the sections that are missing.
+never touch. Then it writes `ROADMAP.md` with dates, `README.md` and `AGENTS.md`, and shows you the plan to approve.
+An existing README, AGENTS.md or CLAUDE.md is never overwritten: the agent offers to add only the sections that are
+missing. A project with its own CLAUDE.md and no AGENTS.md keeps using its CLAUDE.md, unless you ask the agent to
+move it.
 
 Open the board with:
 
@@ -73,8 +76,9 @@ python board/roadmap.py schedule ROADMAP.md --from-today --write                
 ```
 
 To set up a project by hand, copy `plugins/project-board/skills/plan/board/`, `FORMAT.md` and `scripts/roadmap.py`
-into `<project>/board/`, and start from `templates/ROADMAP.md` (and `templates/README.md`, `templates/CLAUDE.md`). Other AI agents can follow
-`plugins/project-board/skills/plan/SKILL.md`: it's plain Markdown in the open Agent Skills format.
+into `<project>/board/`, and start from `templates/ROADMAP.md` (and `README.md`, `AGENTS.md`, `CLAUDE.md` there).
+Other AI agents can follow `plugins/project-board/skills/plan/SKILL.md`: it's plain Markdown in the open Agent Skills
+format.
 
 ## Try the demo
 
@@ -102,7 +106,7 @@ handout that prints on A4. The fonts (Josefin Sans, Quicksand) are under the SIL
 | `.../plan/FORMAT.md` | the roadmap format the board reads |
 | `.../plan/board/index.html`, `serve.py` | the board, and the local server that opens it |
 | `.../plan/scripts/roadmap.py` | `init`, `check` and `schedule` |
-| `.../plan/templates/ROADMAP.md`, `README.md`, `CLAUDE.md` | the starting roadmap and docs |
+| `.../plan/templates/ROADMAP.md`, `README.md`, `AGENTS.md`, `CLAUDE.md` | the starting roadmap and docs (`CLAUDE.md` is the one line `@AGENTS.md`) |
 | `examples/demo/` | a sample project, part way through |
 | `presentation/` | the slides and tour, and the one-page handout |
 
