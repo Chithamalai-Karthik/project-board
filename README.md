@@ -94,6 +94,7 @@ handout that prints on A4. The fonts (Josefin Sans, Quicksand) are under the SIL
 
 | Path | What |
 | --- | --- |
+| `CLAUDE.md` | for an agent working on this plugin: where to start reading, the standing rules, how to test |
 | `.claude-plugin/marketplace.json` | makes this repo a Claude Code plugin marketplace |
 | `plugins/project-board/.claude-plugin/plugin.json` | the plugin (name, version) |
 | `plugins/project-board/skills/plan/SKILL.md` | the agent's instructions: set up, interview, plan, schedule, write the docs, keep it all live |
