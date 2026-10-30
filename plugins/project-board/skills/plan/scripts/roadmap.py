@@ -6,7 +6,8 @@
                                           [--effort S=1,M=3,L=5,XL=10] [--from-today] [--write]
 
 init      sets the board up in a project: copies the board page, its server, FORMAT.md and this script into
-          <project>/board/ (replacing older copies), and the starting roadmap to <project>/ROADMAP.md if there is none.
+          <project>/board/ (replacing older copies), and the starting ROADMAP.md, README.md and CLAUDE.md into
+          <project>/ for each one that isn't there yet (existing files are never touched).
 check     reports format errors (exit code 1) and warnings: missing due dates, dates out of order or outside the
           schedule, overdue steps, parts without their step.
 schedule  works out every unfinished step's due date in roadmap order, one after another, from its effort size
@@ -379,7 +380,7 @@ def check(rm):
 
 
 def init(project):
-    """Copies the board into <project>/board/ and the template roadmap if the project has none."""
+    """Copies the board into <project>/board/, and the template roadmap and docs the project doesn't have yet."""
     skill = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     board = os.path.join(project, "board")
     os.makedirs(board, exist_ok=True)
@@ -390,15 +391,22 @@ def init(project):
         (os.path.abspath(__file__), os.path.join(board, "roadmap.py")),
     ]
     for src, dst in copies:
-        if os.path.abspath(src) != os.path.abspath(dst):
+        # (run from a project's own board/roadmap.py, the sources are the board's files themselves, or not there)
+        if os.path.exists(src) and os.path.abspath(src) != os.path.abspath(dst):
             shutil.copyfile(src, dst)
         print("board:  ", os.path.relpath(dst, project))
-    roadmap = os.path.join(project, "ROADMAP.md")
-    if os.path.exists(roadmap):
-        print("kept:    ROADMAP.md (already there)")
-    else:
-        shutil.copyfile(os.path.join(skill, "templates", "ROADMAP.md"), roadmap)
-        print("new:     ROADMAP.md (the template: fill in every {{...}})")
+    # The roadmap and the project's documentation: started from the templates, never overwritten
+    # (a project's own board/roadmap.py has no templates beside it, so it only reports what's missing)
+    for name in ("ROADMAP.md", "README.md", "CLAUDE.md"):
+        path = os.path.join(project, name)
+        template = os.path.join(skill, "templates", name)
+        if os.path.exists(path):
+            print(f"kept:    {name} (already there)")
+        elif os.path.exists(template):
+            shutil.copyfile(template, path)
+            print(f"new:     {name} (the template: fill in every {{{{...}}}})")
+        else:
+            print(f"missing: {name} (run init from the plugin to start it from the template)")
     print("Open the board: python board/serve.py")
 
 
