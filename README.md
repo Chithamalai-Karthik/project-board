@@ -19,24 +19,26 @@ cards fly to their new column, overdue steps turn red, and the timeline shows wh
 
 ## Install (Claude Code)
 
-In Claude Code:
-
-```
-/plugin marketplace add Chithamalai-Karthik/project-board
-/plugin install project-board@project-board
-```
-
-Or from a terminal:
+In a terminal (the editor's terminal is fine):
 
 ```bash
 claude plugin marketplace add Chithamalai-Karthik/project-board
 claude plugin install project-board@project-board
 ```
 
+Then start a new Claude session. If Claude Code itself is running in the terminal, `/plugin marketplace add …` and
+`/plugin install …` do the same; an editor's chat panel doesn't have `/plugin`.
+
 The board and its scripts need Python 3.8+ (no packages).
 
-**Updates:** `/plugin marketplace update project-board` and then `/plugin update project-board@project-board`. Or
-turn on auto-update in `/plugin` → Marketplaces.
+**Updates:** in a terminal, then start a new session:
+
+```bash
+claude plugin marketplace update project-board
+claude plugin update project-board@project-board
+```
+
+Or turn on auto-update in `/plugin` → Marketplaces (Claude Code in a terminal).
 
 ## Use
 

@@ -92,7 +92,8 @@
 
     <p class="intro">The plan lives in one file, <code>ROADMAP.md</code>, in the project: phases, steps and due dates. The agent
         writes it, works out the dates with a script, and keeps it up to date as the work happens. The board is a web page that
-        shows that file as five columns, with a schedule timeline and overdue warnings. Nobody moves cards by hand.</p>
+        shows that file as five columns, with a schedule timeline and overdue warnings. Nobody moves cards by hand.
+        It also writes <code>README.md</code>, with a map of which file controls what, and <code>AGENTS.md</code>, the rules for any AI agent, and keeps both current.</p>
 
     <div class="grid">
         <section>
@@ -121,11 +122,12 @@
         </section>
 
         <section>
-            <h2>Install it (once, in Claude Code)</h2>
-            <div class="cmd mono">/plugin marketplace add Chithamalai-Karthik/project-board</div>
-            <div class="cmd mono">/plugin install project-board@project-board</div>
-            <p class="muted">Then restart Claude Code. Updates: <code>/plugin marketplace update project-board</code>, then
-                <code>/plugin update project-board@project-board</code>, or turn on auto-update in <code>/plugin</code>.</p>
+            <h2>Install it (once, in a terminal)</h2>
+            <div class="cmd mono">claude plugin marketplace add Chithamalai-Karthik/project-board</div>
+            <div class="cmd mono">claude plugin install project-board@project-board</div>
+            <p class="muted">Then start a new Claude session. Updates: <code>claude plugin marketplace update project-board</code>,
+                then <code>claude plugin update project-board@project-board</code>. In an editor's chat panel, <code>/plugin</code>
+                isn't available: use the terminal.</p>
         </section>
 
         <section>
