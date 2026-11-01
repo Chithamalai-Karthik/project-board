@@ -6,9 +6,10 @@
                                           [--effort S=1,M=3,L=5,XL=10] [--from-today] [--write]
 
 init      sets the board up in a project: copies the board page, its server, FORMAT.md and this script into
-          <project>/board/ (replacing older copies), and the starting ROADMAP.md, README.md, AGENTS.md and CLAUDE.md
-          (one line, @AGENTS.md) into <project>/ for each one that isn't there yet (existing files are never touched).
-          A project with its own CLAUDE.md and no AGENTS.md gets no AGENTS.md: its CLAUDE.md stays its agent file.
+          <project>/board/ (replacing older copies), and the starting ROADMAP.md, README.md, LAYOUT.md, AGENTS.md and
+          CLAUDE.md (one line, @AGENTS.md) into <project>/ for each one that isn't there yet (existing files are never
+          touched). A project with its own CLAUDE.md and no AGENTS.md gets no AGENTS.md: its CLAUDE.md stays its agent
+          file. A project whose README has a Project layout section gets no LAYOUT.md: the map is already there.
 check     reports format errors (exit code 1) and warnings: missing due dates, dates out of order or outside the
           schedule, overdue steps, parts without their step.
 schedule  works out every unfinished step's due date in roadmap order, one after another, from its effort size
@@ -398,7 +399,12 @@ def init(project):
         print("board:  ", os.path.relpath(dst, project))
     # The roadmap and the project's documentation: started from the templates, never overwritten
     # (a project's own board/roadmap.py has no templates beside it, so it only reports what's missing)
-    for name in ("ROADMAP.md", "README.md", "AGENTS.md", "CLAUDE.md"):
+    readme = os.path.join(project, "README.md")
+    has_layout = False
+    if os.path.exists(readme):
+        with open(readme, encoding="utf-8", errors="ignore") as f:
+            has_layout = re.search(r"^#+\s*Project layout\s*$", f.read(), re.I | re.M) is not None
+    for name in ("ROADMAP.md", "README.md", "LAYOUT.md", "AGENTS.md", "CLAUDE.md"):
         path = os.path.join(project, name)
         template = os.path.join(skill, "templates", name)
         if os.path.exists(path):
@@ -406,6 +412,9 @@ def init(project):
         elif name == "AGENTS.md" and os.path.exists(os.path.join(project, "CLAUDE.md")):
             # Nothing would load a template AGENTS.md beside the project's own CLAUDE.md
             print("skipped: AGENTS.md (the project's CLAUDE.md is its agent file)")
+        elif name == "LAYOUT.md" and has_layout:
+            # An empty template beside the real map would only mislead; the skill offers to move the section
+            print("skipped: LAYOUT.md (the README has a Project layout section)")
         elif os.path.exists(template):
             shutil.copyfile(template, path)
             if name == "CLAUDE.md":

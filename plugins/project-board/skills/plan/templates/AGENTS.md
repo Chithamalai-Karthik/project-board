@@ -4,8 +4,9 @@
 
 ## Read first
 
-- **README.md**: how to set it up, run and use it, and **Project layout**: which file controls what. Start there
-  instead of reading the whole codebase, then open only the files the task needs.
+- **LAYOUT.md**: which file controls what. Start there instead of reading the whole codebase, then open only the
+  files the task needs.
+- **README.md**: how to set it up, run and use it.
 - **ROADMAP.md**: what is built, what comes next and the decisions behind each step.
 
 ## How it is built
@@ -17,8 +18,7 @@
 {{What must not be touched or broken (ports, servers, data, files), what to ask before doing, the user's settled
 preferences. One bullet each, with the reason when it isn't obvious.}}
 
-- **Keep the docs current as you work.** When you add, rename or remove a file, update README › Project layout;
-  when a feature, command, control or option changes, update the README section that describes it.
+- **Keep the docs current as you work.** When you add, rename or remove a file, update LAYOUT.md; when a feature, command, control or option changes, update the README section that describes it.
 
 ## Roadmap and board
 
