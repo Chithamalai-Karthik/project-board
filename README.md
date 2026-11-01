@@ -41,6 +41,10 @@ claude plugin update project-board@project-board
 
 Or turn on auto-update in `/plugin` → Marketplaces (Claude Code in a terminal).
 
+**Your projects:** when a new version needs something from a project, the agent tells you at the start of a session
+and asks before updating it. It compares `board/VERSION` with the installed plugin, on your computer only. Say "not
+now" and it won't ask again until a newer version needs something, or say "Update this project" at any time.
+
 ## Use
 
 In any project folder, ask the agent, for example:
@@ -106,7 +110,9 @@ handout that prints on A4. The fonts (Josefin Sans, Quicksand) are under the SIL
 | `.claude-plugin/marketplace.json` | makes this repo a Claude Code plugin marketplace |
 | `plugins/project-board/.claude-plugin/plugin.json` | the plugin (name, version) |
 | `plugins/project-board/skills/plan/SKILL.md` | the agent's instructions: set up, interview, plan, schedule, write the docs, keep it all live |
+| `plugins/project-board/hooks/` | `hooks.json` and `check_version.py`: at session start, offers to update a project that is behind |
 | `.../plan/FORMAT.md` | the roadmap format the board reads |
+| `.../plan/CHANGES.md` | what each plugin version needs from a project |
 | `.../plan/board/index.html`, `serve.py` | the board, and the local server that opens it |
 | `.../plan/scripts/roadmap.py` | `init`, `check` and `schedule` |
 | `.../plan/templates/ROADMAP.md`, `README.md`, `LAYOUT.md`, `AGENTS.md`, `CLAUDE.md` | the starting roadmap and docs (`CLAUDE.md` is the one line `@AGENTS.md`) |
@@ -116,7 +122,8 @@ handout that prints on A4. The fonts (Josefin Sans, Quicksand) are under the SIL
 ## Releasing a change
 
 Edit the files, bump `version` in `plugins/project-board/.claude-plugin/plugin.json` (users only get a new version
-when it changes), check with `claude plugin validate .`, and push.
+when it changes), add a section to `CHANGES.md` if projects need to pick something up, check with
+`claude plugin validate .`, and push.
 
 ## Licence
 

@@ -24,6 +24,7 @@ Files beside this SKILL.md (in Claude Code: `${CLAUDE_SKILL_DIR}`):
 
 - `board/index.html`, `board/serve.py`: the board, and a tiny local server to open it
 - `FORMAT.md`: the exact format the board reads. **Read it before writing or editing a roadmap.**
+- `CHANGES.md`: what each plugin version needs from a project
 - `templates/`: the starting `ROADMAP.md`, `README.md`, `LAYOUT.md`, `AGENTS.md` and `CLAUDE.md`
 - `scripts/roadmap.py`: `init` (sets it all up), `check` (format and dates) and `schedule` (works out every due
   date). Python 3.8+, no packages.
@@ -38,6 +39,9 @@ Files beside this SKILL.md (in Claude Code: `${CLAUDE_SKILL_DIR}`):
 - **"Document this project" / the docs are missing or stale:** write the docs (5).
 - **During work:** keep the roadmap and the docs live (7).
 - **"We're behind" or a step slipped:** reschedule (8).
+- **"Update this project" / a session-start note says it's behind:** run `init` (1), which also stamps
+  `board/VERSION`, then make the changes in `CHANGES.md` newer than the old stamp that the project doesn't have yet.
+  Ask first. On "not now", add the line `skip <newest version in CHANGES.md>` to `board/VERSION`.
 
 ## 1. Set up the board in the project
 
@@ -49,7 +53,7 @@ This copies the board page, its server, `FORMAT.md` and the script into `<projec
 `ROADMAP.md`, `README.md`, `LAYOUT.md`, `AGENTS.md` and `CLAUDE.md` for each one the project doesn't have yet (it
 never overwrites any of them: existing docs are the user's, see 5). A project with its own CLAUDE.md and no AGENTS.md
 gets no AGENTS.md, and one whose README has a Project layout section gets no LAYOUT.md. The project then works for anyone, with or without this plugin. If `board/` already holds other files of the project's own, ask before running it. Older copies of
-these four files are simply replaced (they hold no project data). Outside Claude Code, use the path of the folder
+these files are simply replaced (they hold no project data). Outside Claude Code, use the path of the folder
 holding this SKILL.md instead of `${CLAUDE_SKILL_DIR}`.
 
 ## 2. Interview: ask only what you can't infer

@@ -10,6 +10,7 @@ init      sets the board up in a project: copies the board page, its server, FOR
           CLAUDE.md (one line, @AGENTS.md) into <project>/ for each one that isn't there yet (existing files are never
           touched). A project with its own CLAUDE.md and no AGENTS.md gets no AGENTS.md: its CLAUDE.md stays its agent
           file. A project whose README has a Project layout section gets no LAYOUT.md: the map is already there.
+          It also writes the plugin's version to <project>/board/VERSION, which the session-start hook compares.
 check     reports format errors (exit code 1) and warnings: missing due dates, dates out of order or outside the
           schedule, overdue steps, parts without their step.
 schedule  works out every unfinished step's due date in roadmap order, one after another, from its effort size
@@ -23,6 +24,7 @@ schedule  works out every unfinished step's due date in roadmap order, one after
 Python 3.8+, standard library only. The format: FORMAT.md beside this skill (and board/FORMAT.md in a project).
 """
 import argparse
+import json
 import math
 import os
 import re
@@ -397,6 +399,14 @@ def init(project):
         if os.path.exists(src) and os.path.abspath(src) != os.path.abspath(dst):
             shutil.copyfile(src, dst)
         print("board:  ", os.path.relpath(dst, project))
+    # The plugin's version, for the session-start hook (a project's own board/roadmap.py has no plugin.json above it)
+    manifest = os.path.join(os.path.dirname(os.path.dirname(skill)), ".claude-plugin", "plugin.json")
+    if os.path.exists(manifest):
+        with open(manifest, encoding="utf-8") as f:
+            version = json.load(f)["version"]
+        with open(os.path.join(board, "VERSION"), "w", encoding="utf-8") as f:
+            f.write(version + "\n")
+        print("board:  ", os.path.relpath(os.path.join(board, "VERSION"), project))
     # The roadmap and the project's documentation: started from the templates, never overwritten
     # (a project's own board/roadmap.py has no templates beside it, so it only reports what's missing)
     readme = os.path.join(project, "README.md")

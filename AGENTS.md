@@ -20,6 +20,8 @@ them all current as work happens. Public repo: github.com/Chithamalai-Karthik/pr
 - `init` copies `board/`, `FORMAT.md` and `roadmap.py` into `<project>/board/`, and the templates into the project.
 - `templates/` hold the starting `ROADMAP.md`, `README.md`, `LAYOUT.md` and `AGENTS.md`, with `{{…}}` for what the agent fills,
   and `CLAUDE.md`, the one line `@AGENTS.md`.
+- `hooks/check_version.py` runs at session start: it compares `board/VERSION` (written by `init`) with the plugin and
+  prints what's new from `CHANGES.md`. It stays local and silent on any failure.
 - `examples/demo/` is a sample project part way through; `presentation/` is the talk (slides, a scripted offline
   tour, a one-page handout).
 - Match the surrounding writing: a header comment per file, short comments that say why, plain wording.
@@ -29,7 +31,8 @@ them all current as work happens. Public repo: github.com/Chithamalai-Karthik/pr
 - **Ask before pushing** to GitHub. The repo is public and installed copies update from it.
 - **Edit this repo, never the installed copy** in `~/.claude/plugins/cache/` (it is replaced on update).
 - **Bump `version`** in `plugins/project-board/.claude-plugin/plugin.json` for every change users should get;
-  without a new version they don't get it.
+  without a new version they don't get it. If existing projects should pick the change up (board files, templates
+  they were started from), add a section to `.../plan/CHANGES.md` too: that is what offers it to them.
 - **A user's files are theirs:** `init` never overwrites an existing `ROADMAP.md`, `README.md`, `LAYOUT.md`,
   `AGENTS.md` or `CLAUDE.md`, and the skill never rewrites the user's text (it offers to add missing sections). Only `board/` files
   are replaced.

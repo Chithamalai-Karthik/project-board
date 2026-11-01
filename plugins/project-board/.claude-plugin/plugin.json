@@ -1,6 +1,6 @@
 {
   "name": "project-board",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Plan a project as phases, steps and dated tasks in ROADMAP.md, shown as a live kanban board with a schedule timeline, with the project's documentation (README.md, a file map in LAYOUT.md, and AGENTS.md); the agent keeps them up to date as work happens.",
   "author": {
     "name": "Chithamalai Karthik",
