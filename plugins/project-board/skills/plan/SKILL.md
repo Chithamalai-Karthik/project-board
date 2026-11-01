@@ -26,8 +26,8 @@ Files beside this SKILL.md (in Claude Code: `${CLAUDE_SKILL_DIR}`):
 - `FORMAT.md`: the exact format the board reads. **Read it before writing or editing a roadmap.**
 - `CHANGES.md`: what each plugin version needs from a project
 - `templates/`: the starting `ROADMAP.md`, `README.md`, `LAYOUT.md`, `AGENTS.md` and `CLAUDE.md`
-- `scripts/roadmap.py`: `init` (sets it all up), `check` (format and dates) and `schedule` (works out every due
-  date). Python 3.8+, no packages.
+- `scripts/roadmap.py`: `init` (sets it all up), `check` (format, dates and stale docs) and `schedule` (works out
+  every due date). Python 3.8+, no packages.
 
 ## Which job
 
@@ -159,7 +159,8 @@ And the docs, in the same turn as the code change:
 - **A feature, command, control or option changed:** the README section that describes it.
 - **A new standing rule** from the user ("never…", "always ask before…"): a bullet in AGENTS.md › Standing rules
   (in CLAUDE.md, if that is the project's agent file).
-- Nothing stale: when a heading or line no longer matches what was built, fix it.
+- Nothing stale: when a heading or line no longer matches what was built, fix it. `check` warns about a `{{…}}` left
+  in the docs and about files the layout lists that are gone or doesn't list; it can't see wrong descriptions.
 
 ## 8. Reschedule when things slip
 

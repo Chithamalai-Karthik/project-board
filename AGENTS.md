@@ -48,6 +48,7 @@ them all current as work happens. Public repo: github.com/Chithamalai-Karthik/pr
 ## Testing
 
 ```bash
+python -m unittest discover tests                                     # roadmap.py and the hook, in temp folders
 claude plugin validate .                                              # the manifest and the skill
 python plugins/project-board/skills/plan/scripts/roadmap.py check examples/demo/ROADMAP.md
 python plugins/project-board/skills/plan/scripts/roadmap.py init <empty temp folder>    # then run init again:

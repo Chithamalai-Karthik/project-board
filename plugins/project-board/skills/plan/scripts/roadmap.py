@@ -12,7 +12,8 @@ init      sets the board up in a project: copies the board page, its server, FOR
           file. A project whose README has a Project layout section gets no LAYOUT.md: the map is already there.
           It also writes the plugin's version to <project>/board/VERSION, which the session-start hook compares.
 check     reports format errors (exit code 1) and warnings: missing due dates, dates out of order or outside the
-          schedule, overdue steps, parts without their step.
+          schedule, overdue steps, parts without their step. Stale docs are warnings too: a {{...}} left in README.md,
+          LAYOUT.md or AGENTS.md, a file the layout lists that is gone, and (in a git repo) a file it doesn't list.
 schedule  works out every unfinished step's due date in roadmap order, one after another, from its effort size
           (working days: S=1, M=3, L=5, XL=10 by default; "S-M" is the average; "4d" is 4 days) on working days
           only (Monday to Friday for 5 days a week, plus Saturday for 6, every day for 7; minus the days off).
@@ -29,6 +30,7 @@ import math
 import os
 import re
 import shutil
+import subprocess
 import sys
 from datetime import date, timedelta
 
@@ -336,7 +338,92 @@ def schedule(rm, args):
     print("\nWritten.")
 
 
-def check(rm):
+def read_doc(project, name):
+    path = os.path.join(project, name)
+    if not os.path.exists(path):
+        return None
+    with open(path, encoding="utf-8", errors="ignore") as f:
+        return f.read()
+
+
+def layout_of(project):
+    """The file map: LAYOUT.md, or the README's Project layout section in a project that still keeps it there."""
+    text = read_doc(project, "LAYOUT.md")
+    if text is not None:
+        return "LAYOUT.md", text
+    m = re.search(r"^#+\s*Project layout\s*$(.*?)(?=^## |\Z)", read_doc(project, "README.md") or "", re.I | re.M | re.S)
+    return ("README › Project layout", m.group(1)) if m else (None, "")
+
+
+def listed_paths(text):
+    """The paths in the first cell of the layout's tables, in `backticks`. Patterns and commands aren't paths."""
+    names = set()
+    for line in text.split("\n"):
+        if line.strip().startswith("|") and len(cells_of(line)) > 1:
+            names.update(re.sub(r"^\./", "", n.replace("\\", "/").rstrip("/"))
+                         for n in re.findall(r"`([^`]+)`", cells_of(line)[0])
+                         if not re.search(r"[*{<\s]|^\.\.\.", n))
+    return names
+
+
+def project_paths(project):
+    """Every file and folder under the project, as relative paths (leaving out what is never the project's own)."""
+    paths = set()
+    for folder, dirs, files in os.walk(project):
+        dirs[:] = [d for d in dirs if d != "node_modules" and d != "__pycache__" and not d.startswith(".")]
+        for name in dirs + files:
+            paths.add(os.path.relpath(os.path.join(folder, name), project).replace("\\", "/"))
+    return paths
+
+
+def tracked_files(project):
+    """The files git tracks in the project, or None outside a git repo."""
+    try:
+        out = subprocess.run(["git", "ls-files", "-z"], cwd=project, capture_output=True, text=True, encoding="utf-8")
+    except OSError:
+        return None
+    return [f for f in out.stdout.split("\0") if f] if out.returncode == 0 else None
+
+
+def in_layout(path, names):
+    """A file counts as listed by its own line, or by its folder's line unless that folder's files are listed one by one."""
+    base = path.rsplit("/", 1)[-1]
+    if path in names or base in names:
+        return True
+    folder = path.rsplit("/", 1)[0] if "/" in path else ""
+    if any(n.rsplit("/", 1)[0] == folder and "/" in n for n in names):
+        return False
+    return any(path.startswith(n + "/") for n in names)
+
+
+def docs_warnings(project):
+    warnings = []
+    for name in ("README.md", "LAYOUT.md", "AGENTS.md"):
+        text = read_doc(project, name) or ""
+        # In code, double braces are the project's own syntax
+        prose = re.sub(r"`[^`\n]*`", "", re.sub(r"^```.*?^```", "", text, flags=re.M | re.S))
+        count = len(re.findall(r"\{\{[^{}]*\}\}", prose))
+        if count:
+            warnings.append(f"{name} has {count} unfilled {{{{...}}}}: fill them in, or ask the user")
+    where, text = layout_of(project)
+    names = listed_paths(text)
+    if not names:
+        return warnings
+    paths = project_paths(project)
+    gone = sorted(n for n in names if n not in paths and not any(p.endswith("/" + n) for p in paths))
+    if gone:
+        warnings.append(f"{where} lists what isn't there: {', '.join(gone)}")
+    tracked = tracked_files(project)
+    if tracked is not None:
+        # Dotfiles and the like are tooling, not the project: the map leaves them out
+        new = sorted(f for f in tracked if not any(p.startswith(".") for p in f.split("/")) and not in_layout(f, names))
+        if new:
+            more = f" and {len(new) - 5} more" if len(new) > 5 else ""
+            warnings.append(f"{where} doesn't list: {', '.join(new[:5])}{more}")
+    return warnings
+
+
+def check(rm, project=None):
     warnings = []
     sch = rm.schedule
     today = date.today()
@@ -369,6 +456,8 @@ def check(rm):
             warnings.append(f"step {s['id']} is overdue (due {s['due']}): finish it, or reschedule (schedule --from-today --write)")
         if effort_days(s["effort"], {**DEFAULT_EFFORT, **(sch.get("effort") or {})}) is None and s["effort"]:
             warnings.append(f"step {s['id']}: effort '{s['effort']}' is not a size (S, M, L, XL) or a number of days")
+    if project:
+        warnings += docs_warnings(project)
     cols = {}
     for s in rm.steps:
         cols[s["col"]] = cols.get(s["col"], 0) + 1
@@ -462,7 +551,7 @@ def main():
     with open(args.roadmap, encoding="utf-8", newline="") as f:
         rm = Roadmap(f.read())
     if args.cmd == "check":
-        sys.exit(check(rm))
+        sys.exit(check(rm, os.path.dirname(os.path.abspath(args.roadmap))))
     if rm.errors:
         for e in rm.errors:
             print("ERROR  " + e)

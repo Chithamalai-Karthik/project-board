@@ -4,6 +4,11 @@ The session-start hook shows a project the sections newer than its `board/VERSIO
 Add a section only when a release changes something a project should pick up. Newest first. Each line says what to do,
 and is skipped if the project already has it.
 
+## 1.5.0
+
+- `init` replaces `board/roadmap.py`, so `check` also warns about stale docs: unfilled `{{...}}`, and files the layout
+  lists that are gone or doesn't list. Run `check` afterwards, and fix what it reports or tell the user.
+
 ## 1.4.0
 
 - `init` adds `board/VERSION`, so later updates are offered by themselves.

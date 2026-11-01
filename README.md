@@ -77,7 +77,7 @@ Everything in a project's `board/` folder works on its own, with Python 3.8+:
 
 ```bash
 python board/serve.py                                   # open the board
-python board/roadmap.py check ROADMAP.md                # check the format and the dates
+python board/roadmap.py check ROADMAP.md                # check the format, the dates and the docs
 python board/roadmap.py schedule ROADMAP.md --start 2026-11-02 --days-per-week 5 --write   # work out the due dates
 python board/roadmap.py schedule ROADMAP.md --from-today --write                           # reschedule what's left
 ```
@@ -116,6 +116,7 @@ handout that prints on A4. The fonts (Josefin Sans, Quicksand) are under the SIL
 | `.../plan/board/index.html`, `serve.py` | the board, and the local server that opens it |
 | `.../plan/scripts/roadmap.py` | `init`, `check` and `schedule` |
 | `.../plan/templates/ROADMAP.md`, `README.md`, `LAYOUT.md`, `AGENTS.md`, `CLAUDE.md` | the starting roadmap and docs (`CLAUDE.md` is the one line `@AGENTS.md`) |
+| `tests/test_roadmap.py` | tests for `roadmap.py` and the session-start hook (not copied into projects) |
 | `examples/demo/` | a sample project, part way through |
 | `presentation/` | the slides and tour, and the one-page handout |
 
@@ -123,7 +124,7 @@ handout that prints on A4. The fonts (Josefin Sans, Quicksand) are under the SIL
 
 Edit the files, bump `version` in `plugins/project-board/.claude-plugin/plugin.json` (users only get a new version
 when it changes), add a section to `CHANGES.md` if projects need to pick something up, check with
-`claude plugin validate .`, and push.
+`python -m unittest discover tests` and `claude plugin validate .`, and push.
 
 ## Licence
 
